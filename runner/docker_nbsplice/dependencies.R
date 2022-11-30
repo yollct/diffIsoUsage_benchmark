@@ -1,0 +1,7 @@
+.libPaths()
+if (!require("BiocManager"))
+    install.packages("BiocManager")
+BiocManager::install("NBSplice", version="devel")
+install.packages("tidyverse")
+BiocManager::install("tximport")
+BiocManager::install("stageR")

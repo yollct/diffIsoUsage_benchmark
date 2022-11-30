@@ -1,0 +1,5 @@
+.libPaths()
+source("http://bioconductor.org/biocLite.R")
+biocLite("JunctionSeq")
+biocLite("DESeq2")
+install.packages("tidyverse")

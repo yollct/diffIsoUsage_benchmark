@@ -1,0 +1,5 @@
+library(NBSplice)
+library(tximport)
+library(tidyverse)
+BiocManager::install("NBSplice")
+BiocManager::install("mppa")
