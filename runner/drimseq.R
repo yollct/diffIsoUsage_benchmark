@@ -21,7 +21,6 @@ meta1$sample_id <- lapply(meta1$sample_id, function(x){gsub(".sra", "", x)}) %>%
 
 if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))) {
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
-    
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
     txi <- tximport(files, type="salmon", txOut=TRUE)
@@ -54,7 +53,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     res <- DRIMSeq::results(d) 
 
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
-    resgene <- data.frame(feature_id=unique(genename$gene_id))
+    resgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
 
     resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"), all=TRUE)
     resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
@@ -62,9 +61,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    res2 $feature_id <- lapply(res2$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- data.frame(feature_id=unique(genename$feature_id))
-    restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
+    restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
 
     restx <- full_join(res2, restx, by=c("feature_id"="feature_id"), all=TRUE)
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
@@ -110,17 +107,15 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
 
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
-    sresgene <- data.frame(feature_id=unique(genename$gene_id))
+    sresgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
     sresgene <- full_join(sresgene, stagegene, by="feature_id")
     
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
     stagetx <- drim.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- data.frame(feature_id=unique(genename$feature_id))
+    srestx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-
     srestx <- full_join(srestx, stagetx, by="feature_id")
     
     #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
@@ -345,20 +340,16 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
 
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
-    sresgene <- data.frame(feature_id=unique(genename$gene_id))
+    sresgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
     sresgene <- inner_join(sresgene, stagegene, by="feature_id")
     
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
     stagetx <- drim.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
-    srestx <- data.frame(feature_id=unique(genename$transcript_id))
-    
-    print(srestx %>% head)
-    print(genename %>% head)
-    srestx <- full_join(srestx, stagetx, by="feature_id")
-    
+    srestx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    srestx <- inner_join(srestx, stagetx, by="feature_id")
     
     #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 

@@ -2,9 +2,9 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=6
-#SBATCH --output=/nfs/scratch/chit/single2.out
-#SBATCH --error=/nfs/scratch/chit/single2.err
-#SBATCH --job-name=single2
+#SBATCH --output=/nfs/scratch/chit/single3.out
+#SBATCH --error=/nfs/scratch/chit/single3.err
+#SBATCH --job-name=single3
 #SBATCH --mem-per-cpu=20G
 #SBATCH --time=07-00:00:00
 

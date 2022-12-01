@@ -1,5 +1,5 @@
 thresholds <- data.frame(tools=c("iso_ktsp","drimseq","dexseq","dturtle","seqGSEA","cuffdiff","junctionseq","saturn","drimseq_stageR", "dexseq_stageR","saturn_stageR"),
-                        thres=c(0.75,0.1,0.1,0.05,0.75,0.05,0.05,0.05,0.05,0.05,0.05))
+                        thres=c(0.75,0.05,0.05,0.05,0.75,0.05,0.05,0.05,0.05,0.05,0.05))
 row.names(thresholds) <- thresholds$tools
 
 list_false_positive <- function(methoddf, truthfile, method){
@@ -219,7 +219,7 @@ pivot_output <- function(outputpr, split=NULL){
     } else if (split=="fc_group") {
         wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "1")
         wideoutputpr$tool <- factor(wideoutputpr$tool)
-        wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("2","3","4","5"))
+        wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("2-5","6-8",">9"))
         wideoutputpr$recall[is.nan(wideoutputpr$recall)] = 0
     } else if (split=="events") {
         wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "0")

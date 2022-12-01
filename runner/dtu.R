@@ -84,7 +84,6 @@ resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", c
 restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("dturtle", colnames(resgene)))) { 
-    print("dturtle for rsem counts")
     meta1 <- meta1 %>% dplyr::filter(group %in% con)
 
     # source(paste0(path,"/runner/groundtruth.R"))
@@ -110,7 +109,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
     dturtle <- run_drimseq(counts = cts, tx2gene = tx2gene, pd=pd, id_col = "id",
                         cond_col = "group", filtering_strategy = "bulk", 
-                        BPPARAM = biocpar, subset_feature = row.names(cts) %in% tx2gene$transcript_id)
+                        BPPARAM = biocpar, subset_feature = row.names(cts) %in% tx2gene$transcript_id_ver)
 
     # ei0.1g <- filter_eventim(type="gene")
     # ei0.1t <- filter_eventim(type="isoform")

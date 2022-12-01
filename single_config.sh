@@ -5,7 +5,7 @@ sim="false"
 ##path to the main script
 path="/nfs/home/students/chit/is_benchmark"
 ##
-name="single3"
+name="single2"
 
 meta="/nfs/scratch/chit/simulated_real/${name}/meta.txt"
 gtf="/nfs/data/references/ensembl98_GRCh38/Homo_sapiens.GRCh38.98.gtf"

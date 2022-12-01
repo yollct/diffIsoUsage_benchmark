@@ -2,9 +2,9 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
-#SBATCH --output=/nfs/scratch/chit/paired2.out
-#SBATCH --error=/nfs/scratch/chit/paired2.err
-#SBATCH --job-name=paired2
+#SBATCH --output=/nfs/scratch/chit/paired3.out
+#SBATCH --error=/nfs/scratch/chit/paired3.err
+#SBATCH --job-name=paired3
 #SBATCH --mem-per-cpu=20G
 #SBATCH --time=07-00:00:00
 
