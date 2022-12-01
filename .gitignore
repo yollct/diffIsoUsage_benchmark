@@ -51,3 +51,4 @@ paired_config.sh
 /scripts/gene_mapper.pkl
 /plot_functions/Rplots.pdf
 .nfs*
+/runner/sing_junctionseq/jcseq.sif

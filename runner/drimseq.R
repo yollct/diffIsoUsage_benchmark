@@ -107,14 +107,14 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
 
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
-    sresgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
+    sresgene <- data.frame(feature_id=unique(genename$gene_id))
     sresgene <- full_join(sresgene, stagegene, by="feature_id")
     
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
     stagetx <- drim.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
-    srestx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    srestx <- data.frame(feature_id=unique(genename$feature_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     srestx <- full_join(srestx, stagetx, by="feature_id")
     
@@ -175,7 +175,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
 
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
     restx <- data.frame(feature_id=unique(rgenename$feature_id))
-
+    
     restx <- full_join(res2, restx, by=c("feature_id"="feature_id"), all=TRUE)
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
@@ -220,17 +220,16 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
 
 
     drim.padj <- getAdjustedPValues(stagerobj, order=FALSE, onlySignificantGenes=FALSE)
-    print(drim.padj)
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
-    sresgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
+    sresgene <- data.frame(feature_id=unique(rgenename$gene_id))
     sresgene <- inner_join(sresgene, stagegene, by="feature_id")
 
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
     stagetx <- drim.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
-    srestx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    srestx <- data.frame(feature_id=unique(rgenename$feature_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     srestx <- inner_join(srestx, stagetx, by="feature_id")
 
@@ -340,14 +339,14 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
 
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
-    sresgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
+    sresgene <- data.frame(feature_id=unique(genename$gene_id))
     sresgene <- inner_join(sresgene, stagegene, by="feature_id")
     
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
     stagetx <- drim.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
-    srestx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    srestx <- data.frame(feature_id=unique(genename$transcript_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     srestx <- inner_join(srestx, stagetx, by="feature_id")
     
