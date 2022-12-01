@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggplot2) 
 library(UpSetR)
 path <- "/nfs/home/students/chit/is_benchmark"
-outdir <- "/nfs/scratch/chit/simulated_real/single4"
+outdir <- "/nfs/scratch/chit/simulated_real/paired3"
 
 groundtruthfiles <- list.files(paste0(outdir, "/fastq_sim"), pattern="isoforms.results") ### change to result
 groundtruth <- do.call("cbind", lapply(groundtruthfiles, function(x){

@@ -9,11 +9,12 @@ RUN chmod 777 /Rlib
 
 RUN echo "R_LIBS_USER='/Rlib'" >> /usr/local/lib/R/etc/Renviron
 RUN echo "R_LIBS='/Rlib'" >> /usr/local/lib/R/etc/Renviron
-# RUN R -e "tryCatch(install.packages(\"tidyverse\", lib=\"/Rlib"),  warning = function(w){ stop(\"install command gave a warning\")})"
-#RUN R -e "tryCatch(source(\"http://bioconductor.org/biocLite.R\"),  warning = function(w){ stop(\"install command gave a warning\")})"
-#RUN R -e "tryCatch(BiocManager::install(\"DESeq2\",ask=FALSE, force=TRUE, lib=\"/Rlib\"),  warning = function(w){ stop(\"install command gave a warning\")})"
-#RUN R -e "tryCatch(biocLite(\"JunctionSeq\"), warning = function(w){ stop(\"install command gave a warning\")})"
-#RUN R -e "tryCatch(biocLite(\"DESeq2\"), warning = function(w){ stop(\"install command gave a warning\")})"
+
+# RUN R -e "tryCatch(install.packages(\'tidyverse\', dependencies=TRUE, repos=\'http://cran.rstudio.com/\'),  warning = function(w){ stop(\'install command gave a warning\')})"
+# RUN R -e "tryCatch(source(\'http://bioconductor.org/biocLite.R\''),  warning = function(w){ stop(\'install command gave a warning\'')})"
+# #RUN R -e "tryCatch(BiocManager::install(\"DESeq2\",ask=FALSE, force=TRUE, lib=\"/Rlib\"),  warning = function(w){ stop(\"install command gave a warning\")})"
+# RUN R -e "tryCatch(biocLite(\'JunctionSeq\', dependencies=TRUE, repos=\'http://cran.rstudio.com/\'), warning = function(w){ stop(\'install command gave a warning\'')})"
+# RUN R -e "tryCatch(biocLite(\'DESeq2\', dependencies=TRUE, repos=\'http://cran.rstudio.com/\'), warning = function(w){ stop(\'install command gave a warning\'')})"
 
 WORKDIR /MOUNT
 #ENTRYPOINT SCRIPT
