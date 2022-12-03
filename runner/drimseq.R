@@ -223,7 +223,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
     sresgene <- data.frame(feature_id=unique(rgenename$gene_id))
-    sresgene <- inner_join(sresgene, stagegene, by="feature_id")
+    sresgene <- full_join(sresgene, stagegene, by="feature_id")
 
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
@@ -231,7 +231,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
     srestx <- data.frame(feature_id=unique(rgenename$feature_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- inner_join(srestx, stagetx, by="feature_id")
+    srestx <- full_join(srestx, stagetx, by="feature_id")
 
     #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 
@@ -340,7 +340,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
     sresgene <- data.frame(feature_id=unique(genename$gene_id))
-    sresgene <- inner_join(sresgene, stagegene, by="feature_id")
+    sresgene <- full_join(sresgene, stagegene, by="feature_id")
     
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
@@ -348,7 +348,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
     srestx <- data.frame(feature_id=unique(genename$transcript_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- inner_join(srestx, stagetx, by="feature_id")
+    srestx <- full_join(srestx, stagetx, by="feature_id")
     
     #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 

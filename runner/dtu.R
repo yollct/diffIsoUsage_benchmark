@@ -61,7 +61,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
 
     dturtle_g <- data.frame(feature_id=dturtle_1$FDR_table$geneID, dturtle=dturtle_1$FDR_table$gene) %>% unique
-    resgene <- inner_join(resgene, dturtle_g, by="feature_id")
+    resgene <- full_join(resgene, dturtle_g, by="feature_id")
 
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
     dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
@@ -124,7 +124,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
 
     dturtle_g <- data.frame(feature_id=dturtle_1$FDR_table$geneID, dturtle=dturtle_1$FDR_table$gene) %>% unique
-    resgene <- inner_join(resgene, dturtle_g, by="feature_id")
+    resgene <- full_join(resgene, dturtle_g, by="feature_id")
 
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
     dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
@@ -177,7 +177,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
     dturtle_g <- data.frame(feature_id=dturtle_1$FDR_table$geneID, dturtle=dturtle_1$FDR_table$gene) %>% unique
-    resgene <- inner_join(resgene, dturtle_g, by="feature_id")
+    resgene <- full_join(resgene, dturtle_g, by="feature_id")
 
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
     dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)

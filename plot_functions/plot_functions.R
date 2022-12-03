@@ -4,12 +4,12 @@ library(UpSetR)
 source("/nfs/home/students/chit/is_benchmark/plot_functions/functions.R")
 
 path <- "/nfs/home/students/chit/is_benchmark"
-outdir <- "/nfs/scratch/chit/simulated_real/paired2/"
+outdir <- "/nfs/scratch/chit/simulated_real/paired3/"
 
 #####
 truthfiles_g <- list.files(paste0(outdir, "/results"), pattern="truthtable_gene.csv") ### change to result
 truthfile_g <- read.csv(paste0(outdir, "/results/",truthfiles_g), sep="\t")
-new_truthfile_g <- truthfile_g %>% select(-dispGeneEst) %>% unique()
+new_truthfile_g <- truthfile_g #%>% select(-dispGeneEst) %>% unique()
 
 truthfiles_tx <- list.files(paste0(outdir, "/results"), pattern="truthtable_tx.csv") ### change to result
 truthfile_tx <- read.csv(paste0(outdir, "/results/",truthfiles_tx), sep="\t")
@@ -34,7 +34,7 @@ kal_g <- read.csv(paste0(outdir, "/results/", kalfile[1]), sep="\t")
 kal_g[is.na(kal_g)] <- 1
 kal_g <- kal_g %>% unique
 kal_g <- kal_g[!grepl(".y",colnames(kal_g))]
-#colnames(kal_g) <- lapply(colnames(kal_g), function(x){gsub(".x", "", x)})
+colnames(kal_g) <- lapply(colnames(kal_g), function(x){gsub(".x$", "", x)})
 
 kalfile <- list.files(paste0(outdir, "/results"), pattern="kal_res_tx")
 kal_tx <- read.csv(paste0(outdir, "/results/", kalfile[1]), sep="\t")
@@ -55,6 +55,7 @@ sthresholds <- thresholds[colnames(salmondf_g)[2:ncol(salmondf_g)],]$thres
 print(sthresholds)
 kthresholds <- thresholds[colnames(kal_g)[2:ncol(kal_g)],]$thres
 print(kthresholds)
+rthresholds <- thresholds[colnames(rsemdf_g)[2:ncol(rsemdf_g)],]$thres
 
 res <- plot_upset(salmondf_g, sthresholds)
 #salmondf_g <- salmondf_g %>% select(-iso_ktsp.x, -iso_ktsp.y)
@@ -67,6 +68,10 @@ upset(res, nsets=7)
 dev.off()
 
 #####
+# met <- salmondf_g$drimseq
+# names(met) <- salmondf_g$feature_id
+# names(met)[!new_truthfile_g[new_truthfile_g$status==1,]$feature_id %in% names(met)[met<0.05]]
+
 outputpr<-cal_pre_re(salmondf_g, new_truthfile_g, sthresholds, split=NULL)
 
 salmon_pr <- pivot_output(outputpr, split=NULL)
@@ -116,7 +121,8 @@ dev.off()
 
 
 #################################### compare rsem with salmon
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g,  sthresholds)
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g,  rthresholds)
+rsem_pr <- pivot_output(outputpr)
 
 png(paste0(outdir, "/results/rsem_pr_overall.png"))
 ggplot(rsem_pr, aes(x=precision, y=recall, color=tool, shape=tool, fill=tool))+
@@ -127,7 +133,7 @@ ggplot(rsem_pr, aes(x=precision, y=recall, color=tool, shape=tool, fill=tool))+
 dev.off()
 ###
 
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, thresholds, split="gene_group")
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, rthresholds, split="gene_group")
 rsem_pr_gg <- pivot_output(outputpr, split="gene_group")
 
 png(paste0(outdir, "/results/rsem_pr_niso.png"))
@@ -139,7 +145,7 @@ dev.off()
     
 ####
 
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, thresholds, split="fc_group")
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, rthresholds, split="fc_group")
 rsem_pr_fc <- pivot_output(outputpr, split="fc_group")
 
 png(paste0(outdir, "/results/rsem_pr_foldchange.png"))
@@ -151,7 +157,7 @@ ggplot(rsem_pr_fc, aes(x=precision, y=recall, color=tool, shape=tool))+
 dev.off()
 
 #####
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, thresholds, split="events")
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, rthresholds, split="events")
 rsem_pr_ev <- pivot_output(outputpr, split="events")
 
 png(paste0(outdir, "/results/rsem_pr_events.png"))

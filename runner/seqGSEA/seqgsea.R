@@ -118,8 +118,8 @@ kalresgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt",
 seqgene <- data.frame(seqGSEA=gene.score, feature_id=names(gene.score))
 # seqgene <- separate_rows(seqgene, feature_id, seqGSEA)
 # seqgene %>% head
-resgene <- inner_join(resgene, seqgene, by="feature_id")
-kalresgene <- inner_join(kalresgene, seqgene, by="feature_id")
+resgene <- full_join(resgene, seqgene, by="feature_id")
+kalresgene <- full_join(kalresgene, seqgene, by="feature_id")
 #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
 
 

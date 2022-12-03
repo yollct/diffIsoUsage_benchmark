@@ -85,10 +85,10 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     stageRObj <- stageWiseAdjustment(stageRObj, method="dtu", alpha=0.05, allowNA=T) 
     suppressWarnings({ dex.padj <- getAdjustedPValues(stageRObj, order=FALSE, onlySignificantGenes=FALSE) }) 
 
-
+    
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
     dxr.g <- dxr.g %>% unique()
-    resgene <- inner_join(resgene, dxr.g, by=c("feature_id"="gene"))
+    resgene <- full_join(resgene, dxr.g, by=c("feature_id"="gene"))
     resgene <- resgene %>% dplyr::rename(`dexseq`=qval)
 
     stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
@@ -99,7 +99,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
 
     dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
     dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- inner_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
+    restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
 
     stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
@@ -183,7 +183,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
 
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
     dxr.g <- dxr.g %>% unique()
-    resgene <- inner_join(resgene, dxr.g, by=c("feature_id"="gene"))
+    resgene <- full_join(resgene, dxr.g, by=c("feature_id"="gene"))
     resgene <- resgene %>% dplyr::rename(`dexseq`=qval)
 
     stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
@@ -194,7 +194,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
 
     dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
     dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- inner_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
+    restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
 
     stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
     stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
@@ -314,7 +314,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     stagegene <- drim.padj %>% dplyr::select(geneID, gene) %>% unique()
     stagegene <- stagegene %>% dplyr::rename(drimseq_stageR=gene, feature_id=geneID)
     sresgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
-    sresgene <- inner_join(sresgene, stagegene, by="feature_id")
+    sresgene <- full_join(sresgene, stagegene, by="feature_id")
     
     #resgene <- resgene %>% dplyr::rename(`drimseq_stageR`=gene, feature_id=geneID)
 
@@ -322,7 +322,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     stagetx <- stagetx %>% dplyr::rename(drimseq_stageR=transcript, feature_id=txID)
     srestx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
     srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- inner_join(srestx, stagetx, by="feature_id")
+    srestx <- full_join(srestx, stagetx, by="feature_id")
     
     #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 

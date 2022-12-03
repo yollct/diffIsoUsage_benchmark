@@ -16,7 +16,7 @@ print(con)
 genediff <- read.csv(paste0(outdir, "/results/cuffdiff_results/gene_exp.diff"), sep="\t")
 isodiff <- read.csv(paste0(outdir, "/results/cuffdiff_results/isoform_exp.diff"), sep="\t")
 anno <- read.csv(paste0(outdir, "/results/cuffdiff_results/isoforms.fpkm_tracking"), sep="\t")
-isodiff <- isodiff %>% inner_join(anno, by=c("test_id"="tracking_id"))
+isodiff <- isodiff %>% full_join(anno, by=c("test_id"="tracking_id"))
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
 restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
@@ -29,13 +29,13 @@ krestx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1,
 # row.names(sym2ens) <- sym2ens$symb
 #isodiff_id <- AnnotationDbi::select(org.Hs.eg.db, keys=isodiff$gene, keytype="SYMBOL", columns="ENSEMBL")
 cuffdiff_tx <- data.frame(feature_id=anno$nearest_ref_id, cuffdiff=isodiff$q_value) %>% unique()
-restx <- inner_join(restx, cuffdiff_tx, by="feature_id")
-krestx <- inner_join(krestx, cuffdiff_tx, by="feature_id")
+restx <- full_join(restx, cuffdiff_tx, by="feature_id")
+krestx <- full_join(krestx, cuffdiff_tx, by="feature_id")
 
 genediff_id <- AnnotationDbi::mapIds(org.Hs.eg.db, keys=genediff$gene, keytype="SYMBOL", column=c("ENSEMBL"), multiVals = "first")
 cuffdiff_g <- data.frame(feature_id=genediff_id, cuffdiff=genediff$q_value) 
-resgene <- inner_join(resgene, cuffdiff_g, by="feature_id")
-kresgene <- inner_join(kresgene, cuffdiff_g, by="feature_id")
+resgene <- full_join(resgene, cuffdiff_g, by="feature_id")
+kresgene <- full_join(kresgene, cuffdiff_g, by="feature_id")
 
 write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
 write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
