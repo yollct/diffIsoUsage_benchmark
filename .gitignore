@@ -52,3 +52,4 @@ paired_config.sh
 /plot_functions/Rplots.pdf
 .nfs*
 /runner/sing_junctionseq/jcseq.sif
+*.out

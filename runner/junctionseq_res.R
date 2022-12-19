@@ -12,7 +12,7 @@ con2 <- args[5]
 con <- c(con1, con2)
 print(con)
 
-jcgene <- fread(paste0(outdir, "/results/junctionseqallGenes.results.txt.gz"))
+jcgene <- fread(paste0(outdir, sprintf("/results/jseq_%s_%s_/allGenes.results.txt.gz", con1, con2)))
 jcgene <- as.data.frame(jcgene)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
