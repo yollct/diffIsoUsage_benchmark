@@ -22,6 +22,8 @@ resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt",
 restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
 kresgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
 krestx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+rsresgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
+rsrestx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
 # gtf <- rtracklayer::import(gtfpath)
 # gtf <- as.data.frame(gtf)
@@ -29,19 +31,31 @@ krestx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1,
 # row.names(sym2ens) <- sym2ens$symb
 #isodiff_id <- AnnotationDbi::select(org.Hs.eg.db, keys=isodiff$gene, keytype="SYMBOL", columns="ENSEMBL")
 cuffdiff_tx <- data.frame(feature_id=anno$nearest_ref_id, cuffdiff=isodiff$q_value) %>% unique()
-restx <- full_join(restx, cuffdiff_tx, by="feature_id")
-krestx <- full_join(krestx, cuffdiff_tx, by="feature_id")
+
+
 
 genediff_id <- AnnotationDbi::mapIds(org.Hs.eg.db, keys=genediff$gene, keytype="SYMBOL", column=c("ENSEMBL"), multiVals = "first")
 cuffdiff_g <- data.frame(feature_id=genediff_id, cuffdiff=genediff$q_value) 
-resgene <- full_join(resgene, cuffdiff_g, by="feature_id")
-kresgene <- full_join(kresgene, cuffdiff_g, by="feature_id")
+
+if (!any(grepl("cuffdiff", colnames(resgene)))) { 
+    resgene <- full_join(resgene, cuffdiff_g, by="feature_id")
+    restx <- full_join(restx, cuffdiff_tx, by="feature_id")
+}
+if (!any(grepl("cuffdiff", colnames(kresgene)))) { 
+    kresgene <- full_join(kresgene, cuffdiff_g, by="feature_id")
+    krestx <- full_join(krestx, cuffdiff_tx, by="feature_id")
+}
+if (!any(grepl("cuffdiff", colnames(rsresgene)))) {
+    rsresgene <- full_join(rsresgene, cuffdiff_g, by="feature_id")
+    rsrestx <- full_join(rsrestx, cuffdiff_tx, by="feature_id")
+}
 
 write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
 write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 write.table(kresgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
 write.table(krestx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
-
+write.table(rsresgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+write.table(rsrestx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 # cuffidff_g <- data.frame()
 # pr_cd <- data.frame()
 # pr_gg_cd <- data.frame()

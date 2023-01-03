@@ -90,7 +90,10 @@ do
 done;
 
 echo ${group1l:1}
-cuffdiff -L g1,g2 -u ${outputdir}/results/merged.gtf -p 4 -b ${fasta} ${group1l:1} ${group2l:1} -o ${outputdir}/results/cuffdiff_results
+
+if ! test -s ${outputdir}/results/cuffdiff_results/isoforms.count_tracking; then 
+  cuffdiff -L g1,g2 -u ${outputdir}/results/merged.gtf -p 4 -b ${fasta} ${group1l:1} ${group2l:1} -o ${outputdir}/results/cuffdiff_results
+fi 
 # echo running cufflinks - bowtie
 # ls ${outputdir}/alignments | grep "sample" | parallel --will-cite -j $nCores "  
 #     echo {}

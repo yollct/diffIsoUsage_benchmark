@@ -48,10 +48,10 @@ if __name__=="__main__":
     meta = pd.read_csv(args.meta, sep="\t")
 
     #keep only columns that are in metadata
-    finaldf = finaldf.loc[:, np.isin(finaldf.columns, meta['filename'])]
+    finaldf = finaldf.loc[:, np.isin(finaldf.columns, meta['sample_id'])]
 
     # map_group = {x:tmp[e] for e,x in enumerate(meta['group'].unique())}
-    meta['name_isoktsp'] = meta['filename']+"_"+meta['group'].astype('str')
+    meta['name_isoktsp'] = meta['sample_id']+"_"+meta['group'].astype('str')
     print(meta.head())
     isodf = finaldf.copy()
     isodf.columns = meta['name_isoktsp'].to_list() 

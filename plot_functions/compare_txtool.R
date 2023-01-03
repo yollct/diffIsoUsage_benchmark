@@ -2,7 +2,7 @@ library(tidyverse)
 library(ggplot2) 
 library(UpSetR)
 path <- "/nfs/home/students/chit/is_benchmark"
-outdir <- "/nfs/scratch/chit/simulated_real/single4"
+outdir <- "/nfs/scratch/chit/simulated_real/pair_50_8_r2"
 
 groundtruthfiles <- list.files(paste0(outdir, "/fastq_sim"), pattern="isoforms.results") ### change to result
 groundtruth <- do.call("cbind", lapply(groundtruthfiles, function(x){
@@ -62,12 +62,13 @@ groundtruth_long <- pivot_longer(groundtruth, cols=starts_with("SRR"), names_to=
 
 rsemdf_long <- pivot_longer(rsemdf, cols=starts_with("SRR"), names_to="sample", values_to="tpm")
 
-kal_gt <- inner_join(groundtruth_long, kaldf_long, c("tx","sample"))
-sal_gt <- inner_join(groundtruth_long, salmondf_long, by=c("tx","sample"))
-rsem_gt <- inner_join(groundtruth_long, rsemdf_long, by=c("tx", "sample"))
-ks_gt <- inner_join(kaldf_long, salmondf_long, by=c("tx", "sample"))
+kal_gt <- full_join(groundtruth_long, kaldf_long, c("tx","sample"))
+sal_gt <- full_join(groundtruth_long, salmondf_long, by=c("tx","sample"))
+rsem_gt <- full_join(groundtruth_long, rsemdf_long, by=c("tx", "sample"))
+ks_gt <- full_join(kaldf_long, salmondf_long, by=c("tx", "sample"))
 #kal_gt$tpm.x <- as.numeric(kal_gt$tpm.x)
 #kal_gt$tpm.y <- as.numeric(kal_gt$tpm.y)
+unique(groundtruth_long$tx)[(unique(groundtruth_long$tx) %in% unique(kaldf_long$tx))]
 
 png(paste0(outdir, "/results/kallisto_tx.png"))
 ggplot(kal_gt, aes(x=tpm.x, y=tpm.y))+

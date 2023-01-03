@@ -44,34 +44,75 @@ if (!any(grepl("iso_ktsp", colnames(resgene)))) {
 
 ktsp_res = readLines(paste0(outdir, sprintf("/results/kal_isoktsp_output_%s_%s.txt", con1, con2)))
 
-ktsp_gene <- c()
-gene_score <- c()
-ktsp_isoform <- c()
-for (k in ktsp_res){
-    if (strsplit(k, "\t")[[1]][2]=="single_pair_performance"){
-        ktsp_gene <- c(ktsp_gene, strsplit(strsplit(k, "\t")[[1]][3], ",")[[1]][1])
-        ktsp_isoform <- c(ktsp_isoform, strsplit(strsplit(k, "\t")[[1]][3], ",")[[1]][2])
-        ktsp_isoform <- c(ktsp_isoform, strsplit(strsplit(k, "\t")[[1]][4], ",")[[1]][2])
-        gene_score <- c(gene_score, strsplit(strsplit(k, "\t")[[1]][9], "=")[[1]][2])
-    }
-}
-iso_score <- rep(gene_score, each=2)
-
-gene_score <- as.numeric(gene_score)
-iso_score <- as.numeric(iso_score)
-ktsp_g <- data.frame(feature_id=ktsp_gene, `iso_ktsp`=sapply(gene_score,function(x){1-x}))
-ktsp_iso <- data.frame(feature_id=ktsp_isoform, `iso_ktsp`=sapply(iso_score, function(x){1-x}))
-
-
+rm(resgene)
+rm(restx)
+rm(ktsp_res)
+ktsp_res <- readLines(paste0(outdir, sprintf("/results/kal_isoktsp_output_%s_%s.txt", con1, con2)))
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
 restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
-resgene <- full_join(ktsp_g, resgene, by="feature_id")
-restx <- full_join(ktsp_iso, restx, by="feature_id")
+if (!any(grepl("iso_ktsp", colnames(resgene)))) { 
+    ktsp_gene <- c()
+    gene_score <- c()
+    ktsp_isoform <- c()
+    for (k in ktsp_res){
+        if (strsplit(k, "\t")[[1]][2]=="single_pair_performance"){
+            ktsp_gene <- c(ktsp_gene, strsplit(strsplit(k, "\t")[[1]][3], ",")[[1]][1])
+            ktsp_isoform <- c(ktsp_isoform, strsplit(strsplit(k, "\t")[[1]][3], ",")[[1]][2])
+            ktsp_isoform <- c(ktsp_isoform, strsplit(strsplit(k, "\t")[[1]][4], ",")[[1]][2])
+            gene_score <- c(gene_score, strsplit(strsplit(k, "\t")[[1]][9], "=")[[1]][2])
+        }
+    }
+    iso_score <- rep(gene_score, each=2)
 
-write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    gene_score <- as.numeric(gene_score)
+    iso_score <- as.numeric(iso_score)
+    ktsp_g <- data.frame(feature_id=ktsp_gene, `iso_ktsp`=sapply(gene_score,function(x){1-x}))
+    ktsp_iso <- data.frame(feature_id=ktsp_isoform, `iso_ktsp`=sapply(iso_score, function(x){1-x}))
 
+
+
+
+    resgene <- full_join(ktsp_g, resgene, by="feature_id")
+    restx <- full_join(ktsp_iso, restx, by="feature_id")
+
+    write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+}
+
+
+rm(resgene)
+rm(restx)
+rm(ktsp_res)
+ktsp_res <- readLines(paste0(outdir, sprintf("/results/rsem_isoktsp_output_%s_%s.txt", con1, con2)))
+resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
+restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
+
+if (!any(grepl("iso_ktsp", colnames(resgene)))) { 
+    ktsp_gene <- c()
+    gene_score <- c()
+    ktsp_isoform <- c()
+    for (k in ktsp_res){
+        if (strsplit(k, "\t")[[1]][2]=="single_pair_performance"){
+            ktsp_gene <- c(ktsp_gene, strsplit(strsplit(k, "\t")[[1]][3], ",")[[1]][1])
+            ktsp_isoform <- c(ktsp_isoform, strsplit(strsplit(k, "\t")[[1]][3], ",")[[1]][2])
+            ktsp_isoform <- c(ktsp_isoform, strsplit(strsplit(k, "\t")[[1]][4], ",")[[1]][2])
+            gene_score <- c(gene_score, strsplit(strsplit(k, "\t")[[1]][9], "=")[[1]][2])
+        }
+    }
+    iso_score <- rep(gene_score, each=2)
+
+    gene_score <- as.numeric(gene_score)
+    iso_score <- as.numeric(iso_score)
+    ktsp_g <- data.frame(feature_id=ktsp_gene, `iso_ktsp`=sapply(gene_score,function(x){1-x}))
+    ktsp_iso <- data.frame(feature_id=ktsp_isoform, `iso_ktsp`=sapply(iso_score, function(x){1-x}))
+    
+    resgene <- full_join(ktsp_g, resgene, by="feature_id")
+    restx <- full_join(ktsp_iso, restx, by="feature_id")
+
+    write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+}
 # pr_dtu <- data.frame()
 # gg_pr_dtu <- data.frame()
 # tx_pr_dtu <- data.frame()

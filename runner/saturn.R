@@ -32,7 +32,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     row.names(txinfo) <- txinfo$isoform_id
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE)
+    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
 
     salmoncnt <- salmoncnt[,meta1$sample_id]
@@ -185,7 +185,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     row.names(txinfo) <- txinfo$isoform_id
     files <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
     names(files) <- gsub(".*/","",gsub("/abundance.tsv","",files))
-    txi <- tximport(files, type="kallisto", txOut=TRUE)
+    txi <- tximport(files, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
 
     salmoncnt <- salmoncnt[,meta1$sample_id]
@@ -330,12 +330,13 @@ skrestx <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.tx
 if (!any(grepl("saturn", colnames(resgene)))) {
     print("Run saturn on rsem counts")
     
-    txinfo <- genename %>% dplyr::select(gene_id, feature_id) %>% dplyr::rename(isoform_id = "feature_id")
-    row.names(txinfo) <- txinfo$isoform_id
-    files <- Sys.glob(paste0(outputdir, "/rsem_out/*/*.isoforms.resuts"))
+    
+    files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
     genename  <- read.csv(files[1], sep="\t")
-    txi <- tximport(files, type="rsem", txOut=TRUE)
+    txinfo <- genename %>% dplyr::select(gene_id, transcript_id) %>% dplyr::rename(isoform_id = "transcript_id")
+    row.names(txinfo) <- txinfo$isoform_id
+    txi <- tximport(files, type="rsem", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
 
     salmoncnt <- salmoncnt[,meta1$sample_id]
@@ -460,7 +461,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     skrestx <- full_join(stagetx, skrestx, by=c("feature_id"))
 
-    write.table(skresggene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(skresgene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
     write.table(skrestx, paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
 }

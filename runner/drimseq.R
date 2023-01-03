@@ -23,7 +23,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE)
+    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
     
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
@@ -133,7 +133,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     print("Running DRIMSeq kallisto counts")
     rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
     names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
-    txi <- tximport(rfiles, type="kallisto", txOut=TRUE)
+    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
     rsemtpm <- txi$counts
     rgenename <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
     #rsemtpm <- apply(rsemtpm, 2, function(x){x+1})
@@ -255,7 +255,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
     genename  <- read.csv(files[1], sep="\t")
-    txi <- tximport(files, type="rsem", txOut=TRUE)
+    txi <- tximport(files, type="rsem", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
     
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")

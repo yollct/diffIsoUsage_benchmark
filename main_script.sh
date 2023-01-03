@@ -1,4 +1,5 @@
 #!/bin/bash
+PATH=$PATH:/nfs/home/students/chit/miniconda3
 PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.1.Linux_x86_64
 PATH=$PATH:/nfs/home/students/chit/samtools-1.13
 PATH=$PATH:/nfs/home/students/chit/RSEM-1.3.2/
@@ -202,6 +203,10 @@ done
 # fi
 
 STAR --version
+# ACTIVATE ANACONDA
+eval "$(conda shell.bash hook)"
+conda activate nease
+echo "conda activated"
 
 ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --will-cite -j $nCores "
   echo running star...
@@ -263,16 +268,6 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
                 ${outputdir}/qort/{}/
       echo DONE for QoRT {}
     fi
-
-    ! test -d ${outputdir}/results/htseq_exon && mkdir -p ${outputdir}/results/htseq_exon || true
-
-    if ! test -s ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam; 
-      then
-      samtools view -h ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam
-    fi 
-
-    python ${path}/runner/seqGSEA/count_in_exons.py -p yes ${index}/this_gtf.exon ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam ${outputdir} {} ${meta}
-    echo DONE HTSeq {}
 
   else 
     echo running for single-end read data
@@ -336,6 +331,40 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
       echo QoRT is done {}. skipped
     fi
 
+    ! test -d ${outputdir}/rsem_out && mkdir -p ${outputdir}/rsem_out || true
+    ! test -d ${outputdir}/rsem_out/{} && mkdir -p ${outputdir}/rsem_out/{} || true
+    
+    if ! test -f ${outputdir}/rsem_out/{}/{}.genes.results
+    then
+      rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64  ${readfilesdir}/{}.${fastaq} ${index}/asim ${outputdir}/rsem_out/{}/{}
+  
+    fi
+      
+  fi
+  "
+ 
+
+conda activate htseq
+
+ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --will-cite -j $nCores "
+  echo running star...
+  # paired data
+  if [ $pairstate == "paired" ]; then
+    
+
+    ! test -d ${outputdir}/results/htseq_exon && mkdir -p ${outputdir}/results/htseq_exon || true
+
+    if ! test -s ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam; 
+      then
+      samtools view -h ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam
+    fi 
+
+    python ${path}/runner/seqGSEA/count_in_exons.py -p yes ${index}/this_gtf.exon ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam ${outputdir} {} ${meta}
+    echo DONE HTSeq {}
+
+  else 
+    echo running for single-end read data
+    echo Transcript quantification with Salmon for Sample: {}
 
     ! test -d ${outputdir}/results/htseq_exon && mkdir -p ${outputdir}/results/htseq_exon || true
 
@@ -349,43 +378,42 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
   
   fi
   "
- 
+
+
   
   
-  # if ! test -f ${outputdir}/rsem_out/{}/{}.genes.results
-  #   then
-  # rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64 --star-gzipped-read-file --paired-end ${readfilesdir}/{}_1.${fastaq} ${readfilesdir}/{}_2.${fastaq}  ${index}/asim ${outputdir}/rsem_out/{}/{}
-
-  #${outputdir}/alignments/{}/{}Aligned.toTranscriptome.out.bam
-  ### tophat code
-  #   echo Alignment with Tophat for Sample: {}
-  # ! test -d ${outputdir}/alignments/tophat && mkdir -p ${outputdir}/alignments/tophat || true
-  # ! test -d ${outputdir}/alignments/tophat/{} && mkdir -p ${outputdir}/alignments/tophat/{} || true
-
-
-  # if ! test -f ${readfilesdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam.bai
-	#   then echo indexing {}
-	# 	samtools index ${readfilesdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam ${readfilesdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam.bai
-	# fi
 echo hi
 
-
+conda activate nease
 
 if ! test -f ${outputdir}/results/salmon_count.csv;
   then
   echo "Extracting salmon reads..."
   python ${path}/scripts/extract_salmon.py --dir ${outputdir}/salmon_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf ${index}/tx2g.gtf --meta $meta
-  python ${path}/scripts/extract_kallisto.py --dir ${outputdir}/kallisto_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf ${index}/tx2g.gtf --meta $meta
-  python ${path}/scripts/extract_rsem.py --dir ${outputdir}/rsem_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf $gtf  --meta $meta
-  echo "Finished running salmon."
 fi
 
+if ! test -f ${outputdir}/results/kal_count.csv;
+  then
+  echo "Extracting kallisto reads..."
+  python ${path}/scripts/extract_kallisto.py --dir ${outputdir}/kallisto_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf ${index}/tx2g.gtf --meta $meta
+fi
 
+if ! test -f ${outputdir}/results/rsem_count.csv;
+  then
+  echo "Extracting rsem reads..."
+  python ${path}/scripts/extract_rsem.py --dir ${outputdir}/rsem_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf $gtf  --meta $meta
+fi
 
+conda activate py2
+
+bash ${path}/run_cufflinks.sh --config ${config}
+
+if ! test -d ${outputdir}/results/jseq_${groupl[0]}_${groupl[1]}_; then
+  singularity run --bind ${outputdir}:/MOUNT /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
+fi
 #python ${path}/scripts/extract_salmon.py --dir ${readfilesdir}/salmon_out --outputfile ${readfilesdir}/results/salmon_count.csv --pattern sample --type TPM
 
 
-echo "run isodot"
 
 # ls ${readfilesdir}/salmon_out |  parallel --will-cite -j $nCores "
 
@@ -405,11 +433,10 @@ echo "run isodot"
 #         echo {} exists
 #         continue
 #     else
-
+conda activate nease
 ###################### Run cufflinks for STAR resultss #######
 #run cufflink in separate scripts 'cos it takes too long.....
 ############################################################
-
 
 echo "Done preprocessing."
 echo $sim

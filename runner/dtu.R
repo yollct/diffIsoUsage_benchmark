@@ -40,7 +40,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    cts <- import_counts(files = files, type = "salmon")
+    cts <- import_counts(files = files, type = "salmon", countsFromAbundance="scaledTPM")
 
     pd <- data.frame("id"=colnames(cts), "group"=meta1$group, 
                     stringsAsFactors = FALSE)
@@ -75,8 +75,8 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 ####### RSEM counts ###############
 rm(resgene)
 rm(restx)
-rm(sresgene)
-rm(srestx)
+rm(resgene)
+rm(restx)
 rm(pd)
 rm(cts)
 
@@ -103,7 +103,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
-    cts <- import_counts(files = files, type = "rsem")
+    cts <- import_counts(files = files, type = "rsem", countsFromAbundance="scaledTPM")
 
     pd <- data.frame("id"=colnames(cts), "group"=meta1$group, 
                     stringsAsFactors = FALSE)
@@ -137,8 +137,8 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
 rm(resgene)
 rm(restx)
-rm(sresgene)
-rm(srestx)
+rm(resgene)
+rm(restx)
 rm(pd)
 rm(cts)
 
@@ -155,7 +155,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
     rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
     names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
-    rcts <- import_counts(files = rfiles, type = "kallisto")
+    rcts <- import_counts(files = rfiles, type = "kallisto", countsFromAbundance="scaledTPM")
 
     rpd <- data.frame("id"=colnames(rcts), "group"=meta1$group, 
                     stringsAsFactors = FALSE)
