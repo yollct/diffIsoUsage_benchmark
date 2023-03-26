@@ -7,7 +7,7 @@ echo "#########################"
 echo "Running JunctionSeq from R"
 echo "#########################"
 
-Rscript /dependencies.R 
+#Rscript /dependencies.R 
 
 for x in $(cat /MOUNT/compare_list.txt); do
     con1=$(echo ${x} | cut -d ';' -f 1)

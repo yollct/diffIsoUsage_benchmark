@@ -23,13 +23,17 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
+
+
     txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
+
     
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
     groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
+
     cnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$feature_id, txi$counts)
-    cnt <- cnt[rowSums(salmoncnt)>0,]
+    cnt <- cnt[rowSums(salmoncnt)>10,]
     colnames(cnt) <- lapply(colnames(cnt), function(x){gsub(".fq", "", x)}) %>% unlist
     cnt <- cnt %>% dplyr::filter(gene_id!="?")
     cnt <- cnt %>% dplyr::select("gene_id", "feature_id", meta1$sample_id) 
@@ -46,16 +50,16 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     set.seed(123)
 
     print("Calculating precision DRIMSeq data")
-    d <- dmPrecision(d, design = design_full, prec_subset=1,BPPARAM =BiocParallel::MulticoreParam(4))
-    d <- dmFit(d, design=design_full,BPPARAM = BiocParallel::MulticoreParam(4))
-    d <- dmTest(d, coef=2,BPPARAM = BiocParallel::MulticoreParam(4))
+    d <- dmPrecision(d, design = design_full, prec_subset=1,BPPARAM =BiocParallel::MulticoreParam(12))
+    d <- dmFit(d, design=design_full,BPPARAM = BiocParallel::MulticoreParam(12))
+    d <- dmTest(d, coef=2,BPPARAM = BiocParallel::MulticoreParam(12))
 
     res <- DRIMSeq::results(d) 
 
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
     resgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
 
-    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"), all=TRUE)
+    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"))
     resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
@@ -63,7 +67,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
     restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
 
-    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"), all=TRUE)
+    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
@@ -139,7 +143,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     #rsemtpm <- apply(rsemtpm, 2, function(x){x+1})
     rsemcnt <- data.frame(gene_id=rgenename$gene_id, feature_id=rgenename$feature_id, rsemtpm)
 
-    rsemcnt <- rsemcnt[rowSums(rsemtpm)>0,]
+    rsemcnt <- rsemcnt[rowSums(rsemtpm)>10,]
 
     ##add a pseudo count +1 to calculate geometric means
     colnames(rsemcnt) <- lapply(colnames(rsemcnt), function(x){gsub(".fq", "", gsub(".isoforms.results", "", x))}) %>% unlist
@@ -168,7 +172,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
     resgene <- data.frame(feature_id=unique(rgenename$gene_id))
 
-    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"), all=TRUE)
+    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"))
     resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
@@ -176,7 +180,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
     restx <- data.frame(feature_id=unique(rgenename$feature_id))
     
-    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"), all=TRUE)
+    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
@@ -261,7 +265,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
     groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
     cnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$transcript_id, txi$counts)
-    cnt <- cnt[rowSums(salmoncnt)>0,]
+    cnt <- cnt[rowSums(salmoncnt)>10,]
     colnames(cnt) <- lapply(colnames(cnt), function(x){gsub(".fq", "", x)}) %>% unlist
     cnt <- cnt %>% dplyr::filter(gene_id!="?")
     cnt <- cnt %>% dplyr::select("gene_id", "feature_id", meta1$sample_id) 
@@ -287,7 +291,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
     resgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
 
-    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"), all=TRUE)
+    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"))
     resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
@@ -295,7 +299,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
     restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
 
-    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"), all=TRUE)
+    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 

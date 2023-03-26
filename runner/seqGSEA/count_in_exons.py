@@ -64,7 +64,7 @@ sample = args[3]
 meta = args[4]
 metaline = open(meta, "r")
 for line in metaline.readlines():
-   if sample in line:
+   if sample==line.split("\t")[0]:
       group = line.split("\t")[1]
       group = group.strip("\n")
 

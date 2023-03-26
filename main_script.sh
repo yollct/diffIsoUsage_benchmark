@@ -1,4 +1,5 @@
 #!/bin/bash
+
 PATH=$PATH:/nfs/home/students/chit/miniconda3
 PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.1.Linux_x86_64
 PATH=$PATH:/nfs/home/students/chit/samtools-1.13
@@ -210,7 +211,7 @@ echo "conda activated"
 
 ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --will-cite -j $nCores "
   echo running star...
-  # paired data
+
   if [ $pairstate == "paired" ]; then
     echo Transcript quantification with Salmon for Sample: {}
     ! test -d ${outputdir}/salmon_out/{} && mkdir -p ${outputdir}/salmon_out/{} || true # to allow mkdir to fail gracefully, we add '|| true'
@@ -309,11 +310,6 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
       echo STAR is done {}. skipped
     fi
     
-    # ! test -d ${outputdir}/rsem_out && mkdir -p ${outputdir}/rsem_out || true
-    # ! test -d ${outputdir}/rsem_out/{} && mkdir -p ${outputdir}/rsem_out/{} || true
-
-    
-
     echo {} running QoRT
     ! test -d ${outputdir}/qort && mkdir -p ${outputdir}/qort || true
     ! test -d ${outputdir}/qort/{} && mkdir -p ${outputdir}/qort/{} || true
@@ -348,7 +344,7 @@ conda activate htseq
 
 ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --will-cite -j $nCores "
   echo running star...
-  # paired data
+  
   if [ $pairstate == "paired" ]; then
     
 
@@ -377,7 +373,7 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
     echo DONE HTSeq {}
   
   fi
-  "
+"
 
 
   
@@ -401,12 +397,13 @@ fi
 if ! test -f ${outputdir}/results/rsem_count.csv;
   then
   echo "Extracting rsem reads..."
-  python ${path}/scripts/extract_rsem.py --dir ${outputdir}/rsem_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf $gtf  --meta $meta
+  python ${path}/scripts/extract_rsem.py --dir ${outputdir}/rsem_out --outputfile ${outputdir}/results/ --pattern $pattern --type TPM --gtf $gtf --meta $meta
 fi
 
-conda activate py2
-
-bash ${path}/run_cufflinks.sh --config ${config}
+# conda activate py2
+# if ! test -d ${outputdir}/results/cuffdiff_results; then
+#   bash ${path}/run_cufflinks.sh --config ${config}
+# fi 
 
 if ! test -d ${outputdir}/results/jseq_${groupl[0]}_${groupl[1]}_; then
   singularity run --bind ${outputdir}:/MOUNT /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
@@ -433,7 +430,7 @@ fi
 #         echo {} exists
 #         continue
 #     else
-conda activate nease
+#conda activate nease
 ###################### Run cufflinks for STAR resultss #######
 #run cufflink in separate scripts 'cos it takes too long.....
 ############################################################
@@ -459,6 +456,11 @@ fi
 if ! test -f ${outputdir}/results/kal_isoktsp_output_${groupl[0]}_${groupl[1]}.txt;
   then
   java -jar /nfs/home/students/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/kal_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/kal_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
+fi
+
+if ! test -f ${outputdir}/results/rsem_isoktsp_output_${groupl[0]}_${groupl[1]}.txt;
+  then
+  java -jar /nfs/home/students/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/rsem_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/rsem_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
 fi
 
 echo "Finished running iso-KTSP"

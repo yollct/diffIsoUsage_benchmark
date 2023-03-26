@@ -1,6 +1,6 @@
 suppressMessages(library(tidyverse))
 suppressMessages(library(DTUrtle))
-biocpar <- BiocParallel::MulticoreParam(4)
+biocpar <- BiocParallel::MulticoreParam(12)
 #or standard serial computation (only 1 core)
 biocpar <- BiocParallel::SerialParam()
 
@@ -20,9 +20,11 @@ restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con
 
 meta1 = read.csv(meta, sep="\t")
 row.names(meta1) <- meta1$sample
+meta1 <- meta1 %>% dplyr::filter(group %in% con)
+meta1$sample_id <- lapply(meta1$sample_id, function(x){gsub(".sra", "", x)}) %>% unlist
 
 if (!any(grepl("dturtle", colnames(resgene)))) { 
-    meta1 <- meta1 %>% dplyr::filter(group %in% con)
+    
 
     # source(paste0(path,"/runner/groundtruth.R"))
     # source(paste0(path,"/runner/event_importance.R"))
@@ -42,6 +44,10 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
     cts <- import_counts(files = files, type = "salmon", countsFromAbundance="scaledTPM")
 
+    print("check")
+    print(head(cts))
+    cts <- cts[,colnames(cts)[colnames(cts) %in% meta1$sample_id]]
+    cts <- cts[rowSums(cts)>10,]
     pd <- data.frame("id"=colnames(cts), "group"=meta1$group, 
                     stringsAsFactors = FALSE)
 
@@ -104,6 +110,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
     cts <- import_counts(files = files, type = "rsem", countsFromAbundance="scaledTPM")
+    cts <- cts[,colnames(cts)[colnames(cts) %in% meta1$sample_id]]
 
     pd <- data.frame("id"=colnames(cts), "group"=meta1$group, 
                     stringsAsFactors = FALSE)
@@ -156,6 +163,7 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
     names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
     rcts <- import_counts(files = rfiles, type = "kallisto", countsFromAbundance="scaledTPM")
+    rcts <- rcts[,colnames(rcts)[colnames(rcts) %in% meta1$sample_id]]
 
     rpd <- data.frame("id"=colnames(rcts), "group"=meta1$group, 
                     stringsAsFactors = FALSE)

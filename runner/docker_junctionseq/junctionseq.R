@@ -2,6 +2,7 @@
 library(tidyverse)
 library(JunctionSeq)
 library(DESeq2)
+biocpar <- 1
 #source("/nfs/home/students/chit/is_benchmark/scripts/junctionseq_code.R")
 
 args <- commandArgs(trailingOnly=TRUE)
@@ -23,21 +24,22 @@ if (!file.exists(paste0(outdir, sprintf("/results/jseq_%s_%s_/jscs.RData", con1,
     metadata$sample_id <- lapply(metadata$sample_id, function(x){gsub(".sra", "", x)}) %>% unlist()
     countFiles <- paste0(outdir, "/qort/", metadata$sample_id,
     "/QC.spliceJunctionAndExonCounts.forJunctionSeq.txt.gz")
+    metadata$sample_id <- lapply(metadata$sample_id, function(x){as.character(x)}) %>% unlist
 
     jscs <- runJunctionSeqAnalyses(sample.files = countFiles,
                                     sample.names = metadata$sample_id,
                                     condition=factor(metadata$group),
                                     flat.gff.file = paste0("/MOUNT", "/JunctionSeq.flat.gff.gz"),
-                                    nCores = 12,
+                                    nCores = biocpar,
                                     analysis.type = "junctionsAndExons"
                                     )
 
     #Generate the size factors and load them into the JunctionSeqCountSet:
     jscs <- estimateJunctionSeqSizeFactors(jscs)
-    jscs <- estimateJunctionSeqDispersions(jscs)
+    jscs <- estimateJunctionSeqDispersions(jscs, nCores=biocpar)
     jscs <- fitJunctionSeqDispersionFunction(jscs)
-    jscs <- testForDiffUsage(jscs)
-    jscs <- estimateEffectSizes(jscs)
+    jscs <- testForDiffUsage(jscs, nCores=biocpar)
+    jscs <- estimateEffectSizes(jscs, nCores=biocpar)
 
     if (!file.exists(paste0(outdir, sprintf("/results/jseq_%s_%s_/", con1, con2)))){
         dir.create(paste0(outdir, sprintf("/results/jseq_%s_%s_/", con1, con2)))

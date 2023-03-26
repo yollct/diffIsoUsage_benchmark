@@ -33,7 +33,7 @@ if (!any(grepl("iso_ktsp", colnames(resgene)))) {
     ktsp_g <- data.frame(feature_id=ktsp_gene, `iso_ktsp`=sapply(gene_score,function(x){1-x}))
     ktsp_iso <- data.frame(feature_id=ktsp_isoform, `iso_ktsp`=sapply(iso_score, function(x){1-x}))
 
-
+    ktsp_g %>% head
 
     resgene <- full_join(ktsp_g, resgene, by="feature_id")
     restx <- full_join(ktsp_iso, restx, by="feature_id")
@@ -103,7 +103,9 @@ if (!any(grepl("iso_ktsp", colnames(resgene)))) {
     iso_score <- rep(gene_score, each=2)
 
     gene_score <- as.numeric(gene_score)
+
     iso_score <- as.numeric(iso_score)
+
     ktsp_g <- data.frame(feature_id=ktsp_gene, `iso_ktsp`=sapply(gene_score,function(x){1-x}))
     ktsp_iso <- data.frame(feature_id=ktsp_isoform, `iso_ktsp`=sapply(iso_score, function(x){1-x}))
     

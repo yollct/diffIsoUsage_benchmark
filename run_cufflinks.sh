@@ -2,14 +2,14 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=10
-#SBATCH --output=/nfs/scratch/chit/cufflink_s2.out
-#SBATCH --error=/nfs/scratch/chit/cufflink_s2.err
-#SBATCH --job-name=s2_cufflink
+#SBATCH --output=/nfs/scratch/chit/cufflink_83.out
+#SBATCH --error=/nfs/scratch/chit/cufflink_83.err
+#SBATCH --job-name=cufflink83
 #SBATCH --mem-per-cpu=20G
 #SBATCH --time=14-00:00:00
 
 
-PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.1.Linux_x86_64
+PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.0.Linux_x86_64
 PATH=$PATH:/nfs/home/students/chit/samtools-1.13
 PATH=$PATH:/nfs/home/students/chit/RSEM/bin/
 PATH=$PATH:/usr/bin/tophat2

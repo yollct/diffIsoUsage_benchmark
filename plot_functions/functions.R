@@ -1,6 +1,8 @@
 thresholds <- data.frame(tools=c("iso_ktsp","drimseq","dexseq","dturtle","seqGSEA","cuffdiff","junctionseq","saturn","drimseq_stageR", "dexseq_stageR","saturn_stageR"),
-                        thres=c(0.75,0.05,0.05,0.05,0.75,0.05,0.05,0.05,0.05,0.05,0.05))
+                        thres=c(0.8,0.05,0.05,0.05,0.8,0.05,0.05,0.05,0.05,0.05,0.05))
 row.names(thresholds) <- thresholds$tools
+
+
 
 list_false_positive <- function(methoddf, truthfile, method){
     met <- methoddf[,method]
@@ -61,30 +63,32 @@ cal_fdr_tpr <- function(methoddf, truthfile, thresholds){
 
 
 #calculate precision recall
-cal_pre_re <- function(methoddf, truthfile, thresholds, split=NULL, tx=TRUE){
+cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
     if (is.null(split)){
         mets <- colnames(methoddf)[2:ncol(methoddf)]
         xx<-1
         out <- do.call(cbind, sapply(mets, function(method){
-            met <- methoddf[,method]
-            names(met) <- methoddf$feature_id
-            x<-thresholds[xx]
+            namet <- methoddf[,method]
+            names(namet) <- methoddf$feature_id
+            x<-thresholds[method,]$thres
+            print(x)
+            met <- lapply(namet, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
             #precisions <- sapply(thresholds, function(x){
+            boomet <- lapply(met, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
             if (tx){
-                tp <- sum(names(met)[met<x] %in% truthfile[truthfile$status==1,]$feature_id) 
+                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
             } else {
-                tp <- sum(names(met)[met<x] %in% truthfile[truthfile$status==1,]$feature_id) 
+                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
             }
-            pp <- length(names(met)[met<x])
+            pp <- length(names(met)[boomet])
             precisions <- tp/pp
-            print(tp)
              #   })
             #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
             #recall <- sapply(thresholds, function(x){
             if (tx){
-                tp <- sum(names(met)[met<x] %in% truthfile[truthfile$status==1,]$feature_id) 
+                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
             } else {
-                tp <- sum(names(met)[met<x] %in% truthfile[truthfile$status==1,]$feature_id) 
+                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
             } 
             p <- length(truthfile[truthfile$status==1,]$feature_id)
             recall <- tp/p
@@ -100,34 +104,35 @@ cal_pre_re <- function(methoddf, truthfile, thresholds, split=NULL, tx=TRUE){
             splitted_truth <- truthfile %>% dplyr::filter(truthfile[split]==i)
             not_this_truth <- truthfile[truthfile[split]!=i,]$feature_id    
             splitted_method <- methoddf %>% dplyr::filter(!feature_id %in% not_this_truth)
-            xx<-1
             thisout <- do.call(cbind, sapply(colnames(splitted_method)[2:ncol(splitted_method)], function(method){
-                met <- splitted_method[,method]
-                names(met) <- splitted_method$feature_id
-                x <- thresholds[xx]
+                namet <- splitted_method[,method]
+                names(namet) <- splitted_method$feature_id
+                x <- thresholds[method,]$thres
+                met <- lapply(namet, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
+
+                boomet <- lapply(met, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
                 #precisions <- sapply(thresholds, function(x){
                 if (tx){
-                    tp <- sum(names(met)[met<x] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
+                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
                 } else {
-                    tp <- sum(names(met)[met<x] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
+                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
                 }
-                pp <- length(names(met)[met<x])
+                pp <- length(names(met)[boomet])
                 precisions <- tp/pp
                 #})
                 #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
                 #recall <- sapply(thresholds, function(x){
                 if (tx){
-                    tp <- sum(names(met)[met<x] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
+                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
                     p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
                 } else {
-                    tp <- sum(names(met)[met<x] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
+                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
                     p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
                 }
             
                 
                 recall <- tp/p
             #})
-                xx <- xx+1
                 outout <- data.frame(fdr=c(precisions, recall), type=rep(c("precision", "recall"), each=length(precisions)), tool=rep(method, length(precisions)*2), thresholds=rep(x,2), splits=rep(i, length(precisions)*2))
                 list(t(outout))
             }))
@@ -231,41 +236,82 @@ pivot_output <- function(outputpr, split=NULL){
     return(wideoutputpr)
 }
 
-compare_tools <- function(x,y,split=FALSE){
+compare_tools <- function(x,y,z=NULL,split=FALSE){
     if (split){
         xx<-pivot_longer(x, c("precision", "recall"), names_to="type", values_to="kallisto")
         xx$coltojoin <- paste0(xx$tool, xx$splits, xx$type)
         yy<-pivot_longer(y, c("precision", "recall"), names_to="type", values_to="salmon")
         yy$coltojoin <- paste0(yy$tool, yy$splits, yy$type)
+        
 
         aa <- left_join(xx,yy,by="coltojoin")
-        g <- ggplot(aa)+
+        if (!is.null(z)){
+            zz<-pivot_longer(z, c("precision", "recall"), names_to="type", values_to="rsem")
+            zz$coltojoin <- paste0(zz$tool, zz$splits, zz$type)
+            aa <- left_join(aa,zz,by="coltojoin")
+            g<-ggplot(aa)+
             geom_segment(aes(x=tool.x, xend=tool.x, y=kallisto, yend=salmon), color="grey")+
-            geom_point(aes(x=tool.x, y=kallisto), color="#3300ff", size=5)+
-            geom_point(aes(x=tool.x, y=salmon), color="#f09c3b", size=5)+
-            facet_grid(splits.x~type.x)+coord_flip()
+            geom_point(aes(x=tool.x, y=kallisto, color="#3300ff"), size=5)+
+            geom_point(aes(x=tool.x, y=salmon, color="#f09c3b"), size=5)+
+            geom_point(aes(x=tool.x, y=rsem, color="seagreen3"), size=5)+
+            facet_grid(.~type.x)+coord_flip()
+        } else {
+            
+            g <- ggplot(aa)+
+                geom_segment(aes(x=tool.x, xend=tool.x, y=kallisto, yend=salmon), color="grey")+
+                geom_point(aes(x=tool.x, y=kallisto), color="#3300ff", size=5)+
+                geom_point(aes(x=tool.x, y=salmon), color="#f09c3b", size=5)+
+                facet_grid(splits.x~type.x)+coord_flip()
+        }
             
     } else {
         xx<-pivot_longer(x, c("precision", "recall"), names_to="type", values_to="kallisto")
         xx$coltojoin <- paste0(xx$tool, xx$type)
         yy<-pivot_longer(y, c("precision", "recall"), names_to="type", values_to="salmon")
         yy$coltojoin <- paste0(yy$tool, yy$type)
-
+        
         aa <- left_join(xx,yy,by="coltojoin")
-        g<-ggplot(aa)+
+        if (!is.null(z)){
+            zz<-pivot_longer(z, c("precision", "recall"), names_to="type", values_to="rsem")
+            zz$coltojoin <- paste0(zz$tool, zz$type)
+            
+            aa <- left_join(aa,zz,by="coltojoin")
+            g<-ggplot(aa)+
+                geom_segment(aes(x=tool.x, xend=tool.x, y=kallisto, yend=salmon), color="grey")+
+                geom_point(aes(x=tool.x, y=kallisto, color="Kallisto"), size=5)+
+                geom_point(aes(x=tool.x, y=salmon, color="Salmon"), size=5)+
+                geom_point(aes(x=tool.x, y=rsem, color="RSEM"), size=5)+
+                facet_grid(.~type.x)+coord_flip()
+        } else {
+            g<-ggplot(aa)+
             geom_segment(aes(x=tool.x, xend=tool.x, y=kallisto, yend=salmon), color="grey")+
             geom_point(aes(x=tool.x, y=kallisto, color="Kallisto"), size=5)+
             geom_point(aes(x=tool.x, y=salmon, color="Salmon"), size=5)+
             facet_grid(.~type.x)+coord_flip()
+        }
             
     }
-    g+theme_bw()+
-        theme(axis.text=element_text(size=16), axis.title = element_text(size=20),
-        strip.text.x = element_text(size = 20))+
-        scale_color_manual(values=c("Kallisto"="#3300ff", "Salmon"="#f09c3b"), 
-                    name="Pseudoalignment tools",
-                    breaks=c("Kallisto", "Salmon"))+
-        xlab("Tools")
-        
+    if (!is.null(zz)){
+        g+theme_bw()+
+            theme(axis.text=element_text(size=16), axis.title = element_text(size=20),
+            strip.text.x = element_text(size = 20))+
+            scale_color_manual(values=c("Kallisto"="#3300ff", "Salmon"="#f09c3b", "RSEM"="seagreen3"), 
+                        name="Pseudoalignment tools",
+                        breaks=c("Kallisto", "Salmon", "RSEM"))+
+            xlab("Tools")
+    } else {
+        g+theme_bw()+
+            theme(axis.text=element_text(size=16), axis.title = element_text(size=20),
+            strip.text.x = element_text(size = 20))+
+            scale_color_manual(values=c("Kallisto"="#3300ff", "Salmon"="#f09c3b"), 
+                        name="Pseudoalignment tools",
+                        breaks=c("Kallisto", "Salmon"))+
+            xlab("Tools")
+    }
+            
+
+}
+
+compare_stager <- function(x){
 
 }

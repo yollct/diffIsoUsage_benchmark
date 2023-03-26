@@ -43,7 +43,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
                         group = meta1$group,
                         lib.size = NULL,
                         min.count = 1,
-                        min.total.count = 1,
+                        min.total.count = 10,
                         large.n = 4,
                         min.prop = 0.7
                     ) # more stringen
@@ -163,14 +163,14 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     srestx <- full_join(stagetx, srestx, by=c("feature_id"))
 
-    write.table(sresggene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(sresgene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
     write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 rm(resgene)
 rm(restx)
-rm(sresgene)
-rm(srestx)
+rm(skresgene)
+rm(skrestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
 restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
@@ -178,13 +178,19 @@ restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, 
 skresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)))
 skrestx <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)))
 
+checkcount <- read_tsv(paste0(outdir, sprintf("/results/kal_count.csv")))
+checkcount <- checkcount %>% dplyr::select(-feature_id, -gene_id)
+colSums(checkcount)
+
 if (!any(grepl("saturn", colnames(resgene)))) {
     print("Run saturn on kallisto counts")
     genename  <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
     txinfo <- genename %>% dplyr::select(gene_id, feature_id) %>% dplyr::rename(isoform_id = "feature_id")
     row.names(txinfo) <- txinfo$isoform_id
-    files <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
-    names(files) <- gsub(".*/","",gsub("/abundance.tsv","",files))
+    print(meta1$sample_id) 
+
+    files <- paste0(outdir, "/kallisto_out/", meta1$sample_id,"/abundance.h5")
+    names(files) <- gsub(".*/","",gsub("/abundance.h5","",files))
     txi <- tximport(files, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
     salmoncnt <- txi$counts
 
@@ -196,7 +202,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
                         group = meta1$group,
                         lib.size = NULL,
                         min.count = 1,
-                        min.total.count = 1,
+                        min.total.count = 10,
                         large.n = 4,
                         min.prop = 0.7
                     ) # more stringen
@@ -245,6 +251,10 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     res$isoform_id <- lapply(res$isoform_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist()
     
     res.g <- res %>% dplyr::select(gene_id, regular_FDR) %>% group_by(gene_id) %>% summarise(saturn=min(regular_FDR)) %>% ungroup 
+
+    print("kallisto saturn")
+    res.g %>% head
+    
     resgene <- full_join(resgene, res.g, by=c("feature_id"="gene_id"))
     
     res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% rename(regular_FDR="saturn")
@@ -347,7 +357,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
                         group = meta1$group,
                         lib.size = NULL,
                         min.count = 1,
-                        min.total.count = 1,
+                        min.total.count = 10,
                         large.n = 4,
                         min.prop = 0.7
                     ) # more stringen

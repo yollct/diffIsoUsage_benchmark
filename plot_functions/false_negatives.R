@@ -5,7 +5,7 @@ library(rtracklayer)
 source("/nfs/home/students/chit/is_benchmark/plot_functions/functions.R")
 
 path <- "/nfs/home/students/chit/is_benchmark"
-outdir <- "/nfs/scratch/chit/simulated_real/pair_50_8_r2/"
+outdir <- "/nfs/scratch/chit/simulated_real/pair_50_4_r3/"
 
 count <- read.csv(sprintf("%s/results/kal_count.csv", outdir), sep="\t")
 #####
@@ -33,6 +33,8 @@ kalfile <- list.files(paste0(outdir, "/results"), pattern="kal_res_gene")
 kal_g <- read.csv(paste0(outdir, "/results/", kalfile[1]), sep="\t")
 kal_g[is.na(kal_g)] <- 1
 kal_g <- kal_g %>% unique
+
+salmondf_g %>% dim
 # kal_g <- kal_g[!grepl(".x",colnames(kal_g))]
 colnames(kal_g) <- lapply(colnames(kal_g), function(x){gsub(".y$", "", x)})
 
@@ -68,3 +70,5 @@ ggplot(neggene, aes(x=width)) +
 
 found <- negs[negs %in% count$gene_id]
 neggene <- gtfgene %>% filter(gene_id %in% found)
+
+

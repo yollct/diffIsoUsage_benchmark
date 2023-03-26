@@ -25,17 +25,15 @@ krestx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1,
 rsresgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
 rsrestx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
-# gtf <- rtracklayer::import(gtfpath)
-# gtf <- as.data.frame(gtf)
+gtf <- rtracklayer::import(gtfpath)
+gtf <- as.data.frame(gtf)
+gtf <- gtf %>% dplyr::filter(type=="gene")
 # sym2ens <- unique(data.frame(symb=gtf$gene_name, ensembl=gtf$gene_id))
 # row.names(sym2ens) <- sym2ens$symb
 #isodiff_id <- AnnotationDbi::select(org.Hs.eg.db, keys=isodiff$gene, keytype="SYMBOL", columns="ENSEMBL")
 cuffdiff_tx <- data.frame(feature_id=anno$nearest_ref_id, cuffdiff=isodiff$q_value) %>% unique()
 
-
-
-genediff_id <- AnnotationDbi::mapIds(org.Hs.eg.db, keys=genediff$gene, keytype="SYMBOL", column=c("ENSEMBL"), multiVals = "first")
-cuffdiff_g <- data.frame(feature_id=genediff_id, cuffdiff=genediff$q_value) 
+cuffdiff_g <- data.frame(feature_id=genediff$gene_id, cuffdiff=genediff$q_value) 
 
 if (!any(grepl("cuffdiff", colnames(resgene)))) { 
     resgene <- full_join(resgene, cuffdiff_g, by="feature_id")

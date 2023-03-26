@@ -4,7 +4,7 @@ library(UpSetR)
 source("/nfs/home/students/chit/is_benchmark/plot_functions/functions.R")
 
 path <- "/nfs/home/students/chit/is_benchmark"
-outdir <- "/nfs/scratch/chit/simulated_real/pair_50_8_r2/"
+outdir <- "/nfs/scratch/chit/simulated_real/single_50_8_r1"
 
 #####
 truthfiles_g <- list.files(paste0(outdir, "/results"), pattern="truthtable_gene.csv") ### change to result
@@ -74,7 +74,7 @@ dev.off()
 # names(met) <- salmondf_g$feature_id
 # names(met)[!new_truthfile_g[new_truthfile_g$status==1,]$feature_id %in% names(met)[met<0.05]]
 
-outputpr<-cal_pre_re(salmondf_g, new_truthfile_g, sthresholds, split=NULL)
+outputpr<-cal_pre_re(salmondf_g, new_truthfile_g, split=NULL)
 
 salmon_pr <- pivot_output(outputpr, split=NULL)
 png(paste0(outdir, "/results/pr_overall.png"))
@@ -86,7 +86,7 @@ ggplot(salmon_pr, aes(x=precision, y=recall, color=tool, shape=tool, fill=tool))
 dev.off()
 ###
 
-outputpr<-cal_pre_re(salmondf_g, new_truthfile_g,  sthresholds, split="gene_group")
+outputpr<-cal_pre_re(salmondf_g, new_truthfile_g, split="gene_group")
 salmon_pr_gg <- pivot_output(outputpr, split="gene_group")
 
 png(paste0(outdir, "/results/pr_niso.png"), width=700)
@@ -98,7 +98,7 @@ dev.off()
     
 ####
 
-outputpr<-cal_pre_re(salmondf_g, new_truthfile_g,  sthresholds, split="fc_group")
+outputpr<-cal_pre_re(salmondf_g, new_truthfile_g, split="fc_group")
 salmon_pr_fc <- pivot_output(outputpr, split="fc_group")
 
 png(paste0(outdir, "/results/pr_foldchange.png"), width=700)
@@ -110,7 +110,7 @@ ggplot(salmon_pr_fc, aes(x=precision, y=recall, color=tool, shape=tool))+
 dev.off()
 
 #####
-outputpr<-cal_pre_re(salmondf_g, new_truthfile_g,  sthresholds, split="events")
+outputpr<-cal_pre_re(salmondf_g, new_truthfile_g, split="events")
 salmon_pr_ev <- pivot_output(outputpr, split="events")
 
 png(paste0(outdir, "/results/pr_events.png"),width=700)
@@ -123,7 +123,7 @@ dev.off()
 
 
 #################################### compare rsem with salmon
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g,  rthresholds)
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g)
 rsem_pr <- pivot_output(outputpr)
 
 png(paste0(outdir, "/results/rsem_pr_overall.png"))
@@ -135,7 +135,7 @@ ggplot(rsem_pr, aes(x=precision, y=recall, color=tool, shape=tool, fill=tool))+
 dev.off()
 ###
 
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, rthresholds, split="gene_group")
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, split="gene_group")
 rsem_pr_gg <- pivot_output(outputpr, split="gene_group")
 
 png(paste0(outdir, "/results/rsem_pr_niso.png"))
@@ -147,7 +147,7 @@ dev.off()
     
 ####
 
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, rthresholds, split="fc_group")
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, split="fc_group")
 rsem_pr_fc <- pivot_output(outputpr, split="fc_group")
 
 png(paste0(outdir, "/results/rsem_pr_foldchange.png"))
@@ -159,7 +159,7 @@ ggplot(rsem_pr_fc, aes(x=precision, y=recall, color=tool, shape=tool))+
 dev.off()
 
 #####
-outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, rthresholds, split="events")
+outputpr<-cal_pre_re(rsemdf_g, new_truthfile_g, split="events")
 rsem_pr_ev <- pivot_output(outputpr, split="events")
 
 png(paste0(outdir, "/results/rsem_pr_events.png"))
@@ -173,7 +173,7 @@ dev.off()
 ##############
 #kallisto
 
-outputpr<-cal_pre_re(kal_g, new_truthfile_g,  kthresholds)
+outputpr<-cal_pre_re(kal_g, new_truthfile_g)
 kal_pr <- pivot_output(outputpr)
 
 png(paste0(outdir, "/results/kal_pr_overall.png"))
@@ -185,7 +185,7 @@ ggplot(kal_pr, aes(x=precision, y=recall, color=tool, shape=tool, fill=tool))+
 dev.off()
 ###
 
-outputpr<-cal_pre_re(kal_g, new_truthfile_g, kthresholds, split="gene_group")
+outputpr<-cal_pre_re(kal_g, new_truthfile_g, split="gene_group")
 kal_pr_gg <- pivot_output(outputpr, split="gene_group")
 
 png(paste0(outdir, "/results/kal_pr_niso.png"), width=700)
@@ -197,7 +197,7 @@ dev.off()
     
 ####
 
-outputpr<-cal_pre_re(kal_g, new_truthfile_g, kthresholds, split="fc_group")
+outputpr<-cal_pre_re(kal_g, new_truthfile_g, split="fc_group")
 kal_pr_fc <- pivot_output(outputpr, split="fc_group")
 
 png(paste0(outdir, "/results/kal_pr_foldchange.png"), width=700)
@@ -209,7 +209,7 @@ ggplot(kal_pr_fc, aes(x=precision, y=recall, color=tool, shape=tool))+
 dev.off()
 
 #####
-outputpr<-cal_pre_re(kal_g, new_truthfile_g, kthresholds, split="events")
+outputpr<-cal_pre_re(kal_g, new_truthfile_g, split="events")
 kal_pr_ev <- pivot_output(outputpr, split="events")
 
 png(paste0(outdir, "/results/kal_pr_events.png"), width=700)
@@ -221,12 +221,23 @@ ggplot(kal_pr_ev, aes(x=precision, y=recall, color=tool, shape=tool))+
 dev.off()
 
 png(paste0(outdir, "/results/kal_sal_pr.png"),width=700)
-compare_tools(kal_pr, salmon_pr)
+compare_tools(kal_pr, salmon_pr, rsem_pr)
 dev.off()
 
-png(paste0(outdir, "/results/rsem_sal_pr.png"),width=700)
-compare_tools(kal_pr, rsem_pr)
-dev.off()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -4,7 +4,7 @@ suppressMessages(library(DRIMSeq))
 suppressMessages(library(tidyverse))
 suppressMessages(library(stageR))
 suppressMessages(library(rhdf5))
-biocpar <- BiocParallel::MulticoreParam(4)
+biocpar <- BiocParallel::MulticoreParam(12)
 
 args <- commandArgs(trailingOnly=TRUE)
 outdir <- args[1]
@@ -14,6 +14,7 @@ con1 <- args[4]
 con2 <- args[5]
 con <- c(con1, con2)
 print(con)
+
 
 print("in dexseq")
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
@@ -41,7 +42,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     # row.names(counts_matrix)[!row.names(counts_matrix) %in% row.names(salmoncnt)]
     # counts_matrix[row.names(counts_matrix)=="ENST00000366839.8",]
 
-    salmontpm <- salmontpm[rowSums(salmontpm)>0,]
+    salmontpm <- salmontpm[rowSums(salmontpm)>10,]
     salmontpm <- salmontpm[salmoncnt$gene_id != "?"]
     salmoncnt <- salmoncnt %>% dplyr::filter(gene_id!="?")
     colnames(salmoncnt) <- lapply(colnames(salmoncnt), function(x){gsub(".fq", "", x)}) %>% unlist
@@ -140,7 +141,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     rsemtpm <- apply(rsemtpm, 2, function(x){x+1})
 
     rsemcnt <- data.frame(gene_id=rgenename$gene_id, feature_id=rgenename$feature_id, rsemtpm)
-    rsemcnt <- rsemcnt[rowSums(rsemtpm)>0,]
+    rsemcnt <- rsemcnt[rowSums(rsemtpm)>10,]
     colnames(rsemcnt) <- lapply(colnames(rsemcnt), function(x){gsub(".fq", "", gsub(".isoforms.results", "", x))}) %>% unlist
 
     rsemcnt <- rsemcnt %>% dplyr::filter(gene_id!="?")
@@ -233,7 +234,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     rsemtpm <- txi$counts
 
     rsemcnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$transcript_id, rsemtpm)
-    rsemcnt <- rsemcnt[rowSums(rsemtpm)>0,]
+    rsemcnt <- rsemcnt[rowSums(rsemtpm)>10,]
     colnames(rsemcnt) <- lapply(colnames(rsemcnt), function(x){gsub(".fq", "", gsub(".isoforms.results", "", x))}) %>% unlist
 
     rsemcnt <- rsemcnt %>% dplyr::filter(gene_id!="?")

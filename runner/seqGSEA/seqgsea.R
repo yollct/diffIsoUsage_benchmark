@@ -17,8 +17,8 @@ con1 <- args[5]
 con2 <- args[6]
 metadata <- read_tsv(meta)
 
-case.pattern <- con1# file name starting with "SC"
-ctrl.pattern <- con2 # file name starting with "SN"
+ctrl.pattern <- con1# file name starting with "SC"
+case.pattern <- con2 # file name starting with "SN"
 
  # gene set file and type
 geneset.file <- paste0(index,"/this_gtf.exon")
@@ -28,14 +28,18 @@ geneID.type <- "ensembl"
 
 case.files <- dir(data.dir, pattern=case.pattern, full.names = TRUE)
 control.files <- dir(data.dir, pattern=ctrl.pattern, full.names = TRUE)
+print("hier")
+print(case.pattern)
+print(control.files)
 
-case.files
 # analysis parameters
 nCores <- 2
 perm.times <- 100 # >= 1000 recommended
 DEonly <- FALSE
 DEweight <- c(0.2, 0.5, 0.8) # a vector for different weights
 integrationMethod <- "linear"
+
+### check files
 
 RCS <- loadExonCountData(case.files, control.files)
 RCS <- exonTestability(RCS, cutoff=5)
@@ -104,21 +108,24 @@ DSscore.normFac <- normFactor(RCS@permute_NBstat_gene)
 DSscore <- scoreNormalization(RCS@featureData_gene$NBstat, DSscore.normFac)
 DSscore.perm <- scoreNormalization(RCS@permute_NBstat_gene, DSscore.normFac)
 
+RCS <- DSpermutePval(RCS, permuteMat)
+rcs_seqgene  <- DSresultGeneTable(RCS)
+RCS <- DSpermutePval(RCS, permuteMat)
+seqgene <- rcs_seqgene %>% dplyr::select(geneID, padjust) %>% dplyr::rename("feature_id"="geneID", "seqGSEA"="padjust")
 
-print("score integration")
-gene.score <- geneScore(DEscore, DSscore, DEweight=0.2)
-gene.score.perm <- genePermuteScore(DEscore.perm, DSscore.perm, DEweight=0.2)
-gene.score <- lapply(gene.score, function(x){1-x/max(gene.score)}) %>% unlist
-
-plotGeneScore(gene.score, gene.score.perm, pdf=paste(output.prefix,".DSScore.pdf",sep=""), main="Splicing")
+#plotGeneScore(gene.score, gene.score.perm, pdf=paste(output.prefix,".DSScore.pdf",sep=""), main="Splicing")
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
 kalresgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
 rsresgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
 #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
-seqgene <- data.frame(seqGSEA=gene.score, feature_id=names(gene.score))
+
 # seqgene <- separate_rows(seqgene, feature_id, seqGSEA)
 # seqgene %>% head
+
+print("analysed seqGSEA")
+print(dim(seqgene))
+print(seqgene %>% head)
 
 if (!any(grepl("seqGSEA", colnames(resgene)))) { 
     resgene <- full_join(resgene, seqgene, by="feature_id")

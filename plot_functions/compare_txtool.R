@@ -68,7 +68,7 @@ rsem_gt <- full_join(groundtruth_long, rsemdf_long, by=c("tx", "sample"))
 ks_gt <- full_join(kaldf_long, salmondf_long, by=c("tx", "sample"))
 #kal_gt$tpm.x <- as.numeric(kal_gt$tpm.x)
 #kal_gt$tpm.y <- as.numeric(kal_gt$tpm.y)
-unique(groundtruth_long$tx)[(unique(groundtruth_long$tx) %in% unique(kaldf_long$tx))]
+
 
 png(paste0(outdir, "/results/kallisto_tx.png"))
 ggplot(kal_gt, aes(x=tpm.x, y=tpm.y))+

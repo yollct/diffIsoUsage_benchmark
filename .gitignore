@@ -53,3 +53,5 @@ paired_config.sh
 .nfs*
 /runner/sing_junctionseq/jcseq.sif
 *.out
+*.png
+/Rlib
