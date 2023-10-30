@@ -5,7 +5,7 @@ library(rtracklayer)
 source("/nfs/home/students/chit/is_benchmark/plot_functions/functions.R")
 
 path <- "/nfs/home/students/chit/is_benchmark"
-outdir <- "/nfs/scratch/chit/simulated_real/pair_50_4_r3/"
+outdir <- "/nfs/scratch/chit/simulated_real/pair_50_8_r1/"
 
 count <- read.csv(sprintf("%s/results/kal_count.csv", outdir), sep="\t")
 #####
@@ -71,4 +71,6 @@ ggplot(neggene, aes(x=width)) +
 found <- negs[negs %in% count$gene_id]
 neggene <- gtfgene %>% filter(gene_id %in% found)
 
-
+posgene <- truthfile_g
+truthfile_g %>% head
+kal_g$feature_id[kal_g$cuffdiff>0.05] %in% truthfile_g$feature_id[truthfile_g$status==0]

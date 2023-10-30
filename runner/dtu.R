@@ -1,3 +1,7 @@
+if(!requireNamespace("remotes", quietly = TRUE)){
+    install.packages("remotes")
+}
+remotes::install_github("TobiTekath/DTUrtle")
 suppressMessages(library(tidyverse))
 suppressMessages(library(DTUrtle))
 biocpar <- BiocParallel::MulticoreParam(12)
@@ -14,9 +18,10 @@ con2 <- args[6]
 con <- c(con1, con2)
 print(con)
 
+gtf <- "/nfs/data/references/ensembl98_GRCh38/Homo_sapiens.GRCh38.98.gtf"
 ##### add the result to result table
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
 
 meta1 = read.csv(meta, sep="\t")
 row.names(meta1) <- meta1$sample
@@ -57,7 +62,8 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
     # ei0.1g <- filter_eventim(type="gene")
     # ei0.1t <- filter_eventim(type="isoform")
-
+    
+    
     dturtle_1 <- posthoc_and_stager(dturtle = dturtle, ofdr = 1, posthoc = 0)
     saveRDS(dturtle, paste0(outdir, "/results/salmon_dturtle_res.rds"))
     dturtle <- readRDS(paste0(outdir, "/results/salmon_dturtle_res.rds"))
@@ -72,10 +78,10 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
     dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
     dturtle_tx$feature_id <- lapply(dturtle_tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, dturtle_tx, by=c("feature_id"="feature_id"))
+    # restx <- full_join(restx, dturtle_tx, by=c("feature_id"="feature_id"))
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 ####### RSEM counts ###############
@@ -87,7 +93,7 @@ rm(pd)
 rm(cts)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("dturtle", colnames(resgene)))) { 
     print("dturtle to rsem")
@@ -134,12 +140,12 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     resgene <- full_join(resgene, dturtle_g, by="feature_id")
 
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
-    dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
-    dturtle_tx$feature_id <- lapply(dturtle_tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, dturtle_tx, by=c("feature_id"="feature_id"))
+    # dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
+    # dturtle_tx$feature_id <- lapply(dturtle_tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, dturtle_tx, by=c("feature_id"="feature_id"))
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 rm(resgene)
@@ -150,7 +156,7 @@ rm(pd)
 rm(cts)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
 
 if (!any(grepl("dturtle", colnames(resgene)))) { 
@@ -182,18 +188,18 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
 
     ##### add the result to result table
     resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
-    restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+    # restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
     dturtle_g <- data.frame(feature_id=dturtle_1$FDR_table$geneID, dturtle=dturtle_1$FDR_table$gene) %>% unique
     resgene <- full_join(resgene, dturtle_g, by="feature_id")
 
     #resgene <- inner_join(resgene, dxr %>% dplyr::select(groupID, pvalue), by=c("feature_id"="groupID"))
-    dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
-    dturtle_tx$feature_id <- lapply(dturtle_tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, dturtle_tx, by=c("feature_id"="feature_id"))
+    # dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, dturtle=dturtle_1$FDR_table$transcript)
+    # dturtle_tx$feature_id <- lapply(dturtle_tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, dturtle_tx, by=c("feature_id"="feature_id"))
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 

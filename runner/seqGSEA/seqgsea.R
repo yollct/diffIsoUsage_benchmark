@@ -34,7 +34,7 @@ print(control.files)
 
 # analysis parameters
 nCores <- 2
-perm.times <- 100 # >= 1000 recommended
+perm.times <- 1000 # >= 1000 recommended
 DEonly <- FALSE
 DEweight <- c(0.2, 0.5, 0.8) # a vector for different weights
 integrationMethod <- "linear"
@@ -59,8 +59,6 @@ RCS <- DSpermute4GSEA(RCS, permuteMat)
 geneCounts <- getGeneCount(RCS)
 # calculate DE NB statistics
 label <- label(RCS)
-dds <-runDESeq(geneCounts, label)
-DEGres <- DENBStat4GSEA(dds)
 
 library(parallel)
 cl <- makeCluster(detectCores() - 1)
@@ -69,7 +67,7 @@ clusterEvalQ(cl, library(DESeq2))
 clusterExport(cl, ls())
 
 times <- ncol(permuteMat)
-n_gene <- nrow(counts(dds))
+
 nbstat <- parLapply(cl=cl, X=1:times, fun=function(i) {
     newlabel <- as.factor(permuteMat[,i])
     dds <- DESeqDataSetFromMatrix(geneCounts, DataFrame(newlabel), ~ newlabel)
@@ -99,10 +97,6 @@ nbstat <- parLapply(cl=cl, X=1:times, fun=function(i) {
 print("permuteNBstatGene")
 DEpermNBstat <- do.call("cbind", nbstat)
 
-DEscore.normFac <- normFactor(DEpermNBstat)
-DEscore <- scoreNormalization(DEGres$NBstat, DEscore.normFac)
-DEscore.perm <- scoreNormalization(DEpermNBstat, DEscore.normFac)
-
 print("DS score normalization")
 DSscore.normFac <- normFactor(RCS@permute_NBstat_gene)
 DSscore <- scoreNormalization(RCS@featureData_gene$NBstat, DSscore.normFac)
@@ -110,9 +104,10 @@ DSscore.perm <- scoreNormalization(RCS@permute_NBstat_gene, DSscore.normFac)
 
 RCS <- DSpermutePval(RCS, permuteMat)
 rcs_seqgene  <- DSresultGeneTable(RCS)
-RCS <- DSpermutePval(RCS, permuteMat)
+
 seqgene <- rcs_seqgene %>% dplyr::select(geneID, padjust) %>% dplyr::rename("feature_id"="geneID", "seqGSEA"="padjust")
 
+write.table(seqgene, paste0(outdir, sprintf("/results/seqgsea_res.csv")), sep="\t", row.names=F)
 #plotGeneScore(gene.score, gene.score.perm, pdf=paste(output.prefix,".DSScore.pdf",sep=""), main="Splicing")
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))

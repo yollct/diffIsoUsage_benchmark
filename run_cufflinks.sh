@@ -1,15 +1,16 @@
 #!/bin/bash
 
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
-#SBATCH --output=/nfs/scratch/chit/cufflink_83.out
-#SBATCH --error=/nfs/scratch/chit/cufflink_83.err
-#SBATCH --job-name=cufflink83
-#SBATCH --mem-per-cpu=20G
-#SBATCH --time=14-00:00:00
+#SBATCH --cpus-per-task=4
+#SBATCH --output=/nfs/scratch/chit/cufflink_s82.out
+#SBATCH --error=/nfs/scratch/chit/cufflink_s82.err
+#SBATCH --job-name=cufflinks82
+#SBATCH --mem-per-cpu=40G
+#SBATCH --partition=exbio-cpu
+#SBATCH --time=4-00:00:00
 
 
-PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.0.Linux_x86_64
+PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.1-gffpatch.Linux_x86_64/
 PATH=$PATH:/nfs/home/students/chit/samtools-1.13
 PATH=$PATH:/nfs/home/students/chit/RSEM/bin/
 PATH=$PATH:/usr/bin/tophat2
@@ -49,12 +50,14 @@ while getopts h:c: flag;
   esac
 done
 source ${config}
+eval "$(conda shell.bash hook)"
+conda activate py2
+echo "conda activated"
 
 echo running cufflinks
  
 ! test -d ${outputdir}/results/star_cufflinks && mkdir -p ${outputdir}/results/star_cufflinks
-
-ls ${outputdir}/alignments | grep "SRR" | parallel --will-cite -j $nCores "  
+ls ${outputdir}/alignments | parallel --will-cite -j $nCores "  
     echo {}
     ! test -d ${outputdir}/results/star_cufflinks/{} && mkdir -p ${outputdir}/results/star_cufflinks/{}
     if ! test -s ${outputdir}/resuts/star_cufflinks/{}/isoforms.fpkm_tracking;
@@ -63,11 +66,22 @@ ls ${outputdir}/alignments | grep "SRR" | parallel --will-cite -j $nCores "
     fi
 "
 
+conda activate nease
+
+ls ${outputdir}/alignments | parallel --will-cite -j $nCores "  
+  perl ${path}/runner/cufftrim.pl /nfs/scratch/chit/ref/ensembl_98/Homo_sapiens.GRCh38.dna_sm.primary_assembly.fa.fai ${outputdir}/results/star_cufflinks/{}/transcripts.gtf > ${outputdir}/results/star_cufflinks/{}/transcripts_trim.gtf
+"
+
+ls ${outputdir}/alignments | parallel --will-cite -j $nCores "  
+  python ${path}/runner/cuffdedup.py --gtf ${outputdir}/results/star_cufflinks/{}/transcripts.gtf --output ${outputdir}/results/star_cufflinks/{}/transcripts_dedup.gtf
+"
+
+conda activate py2
 
 echo running cuffmerge...
 find ${outputdir}/results -type f | grep "transcripts.gtf" > ${outputdir}/results/assembly_list.txt
 
-cuffmerge -g ${gtf} -s ${fasta} -o ${outputdir}/results -p 4 ${outputdir}/results/assembly_list.txt
+cuffmerge -g ${gtf} -s ${fasta} -o ${outputdir}/results -p 12 ${outputdir}/results/assembly_list.txt
 
 
 echo here
@@ -92,7 +106,7 @@ done;
 echo ${group1l:1}
 
 if ! test -s ${outputdir}/results/cuffdiff_results/isoforms.count_tracking; then 
-  cuffdiff -L g1,g2 -u ${outputdir}/results/merged.gtf -p 4 -b ${fasta} ${group1l:1} ${group2l:1} -o ${outputdir}/results/cuffdiff_results
+  cuffdiff -L g1,g2 -u ${outputdir}/results/merged.gtf -p 12 -b ${fasta} ${group1l:1} ${group2l:1} -o ${outputdir}/results/cuffdiff_results
 fi 
 # echo running cufflinks - bowtie
 # ls ${outputdir}/alignments | grep "sample" | parallel --will-cite -j $nCores "  

@@ -14,10 +14,10 @@ con <- c(con1, con2)
 print(con)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
 
-sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)))
-srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)))
+# sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)))
+# srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)))
 
 meta1 = read.csv(meta, sep="\t")
 row.names(meta1) <- meta1$sample_id
@@ -99,72 +99,72 @@ if (!any(grepl("saturn", colnames(resgene)))) {
 
     resgene <- full_join(resgene, res.g, by=c("feature_id"="gene_id"))
     
-    res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% dplyr::rename(saturn= regular_FDR)
-    res.tx$isoform_id <- lapply(res.tx$isoform_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, res.tx, by=c("feature_id"="isoform_id"))
+    # res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% dplyr::rename(saturn= regular_FDR)
+    # res.tx$isoform_id <- lapply(res.tx$isoform_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, res.tx, by=c("feature_id"="isoform_id"))
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
-    # transcript level p-values from satuRn
-    pvals <- rowData(sumExp)[[sprintf("fitDTUResult_%s-%s", con1, con2)]]$empirical_pval
+    # # transcript level p-values from satuRn
+    # pvals <- rowData(sumExp)[[sprintf("fitDTUResult_%s-%s", con1, con2)]]$empirical_pval
 
-        # compute gene level q-values
-    geneID <- factor(rowData(sumExp)$gene_id)
-    geneSplit <- split(seq(along = geneID), geneID)
-    pGene <- sapply(geneSplit, function(i) min(pvals[i]))
-    pGene[is.na(pGene)] <- 1
-    theta <- unique(sort(pGene))
+    #     # compute gene level q-values
+    # geneID <- factor(rowData(sumExp)$gene_id)
+    # geneSplit <- split(seq(along = geneID), geneID)
+    # pGene <- sapply(geneSplit, function(i) min(pvals[i]))
+    # pGene[is.na(pGene)] <- 1
+    # theta <- unique(sort(pGene))
 
-    # gene-level significance testing
-    q <- DEXSeq:::perGeneQValueExact(pGene, theta, geneSplit) 
-    qScreen <- rep(NA_real_, length(pGene))
-    qScreen <- q[match(pGene, theta)]
-    qScreen <- pmin(1, qScreen)
-    names(qScreen) <- names(geneSplit)
+    # # gene-level significance testing
+    # q <- DEXSeq:::perGeneQValueExact(pGene, theta, geneSplit) 
+    # qScreen <- rep(NA_real_, length(pGene))
+    # qScreen <- q[match(pGene, theta)]
+    # qScreen <- pmin(1, qScreen)
+    # names(qScreen) <- names(geneSplit)
 
-    # prepare stageR input
-    tx2gene <- as.data.frame(rowData(sumExp)[c("isoform_id", "gene_id")])
-    colnames(tx2gene) <- c("transcript", "gene")
+    # # prepare stageR input
+    # tx2gene <- as.data.frame(rowData(sumExp)[c("isoform_id", "gene_id")])
+    # colnames(tx2gene) <- c("transcript", "gene")
 
-    pConfirmation <- matrix(matrix(pvals),
-        ncol = 1,
-        dimnames = list(rownames(tx2gene), "transcript")
-    )
+    # pConfirmation <- matrix(matrix(pvals),
+    #     ncol = 1,
+    #     dimnames = list(rownames(tx2gene), "transcript")
+    # )
 
-    # create a stageRTx object
-    stageRObj <- stageR::stageRTx(
-        pScreen = qScreen,
-        pConfirmation = pConfirmation,
-        pScreenAdjusted = TRUE,
-        tx2gene = tx2gene
-    )
+    # # create a stageRTx object
+    # stageRObj <- stageR::stageRTx(
+    #     pScreen = qScreen,
+    #     pConfirmation = pConfirmation,
+    #     pScreenAdjusted = TRUE,
+    #     tx2gene = tx2gene
+    # )
 
-    # perform the two-stage testing procedure
-    stageRObj <- stageR::stageWiseAdjustment(
-        object = stageRObj,
-        method = "dtu",
-        alpha = 0.05,
-        allowNA = TRUE
-    )
+    # # perform the two-stage testing procedure
+    # stageRObj <- stageR::stageWiseAdjustment(
+    #     object = stageRObj,
+    #     method = "dtu",
+    #     alpha = 0.05,
+    #     allowNA = TRUE
+    # )
 
-    # retrieves the adjusted p-values from the stageRTx object
-    padj <- stageR::getAdjustedPValues(stageRObj,
-        order = TRUE,
-        onlySignificantGenes = FALSE
-    )
+    # # retrieves the adjusted p-values from the stageRTx object
+    # padj <- stageR::getAdjustedPValues(stageRObj,
+    #     order = TRUE,
+    #     onlySignificantGenes = FALSE
+    # )
 
-    stagegene <- padj %>% dplyr::select(geneID, gene) %>% unique()
-    stagegene <- stagegene %>% dplyr::rename(saturn_stageR=gene, feature_id=geneID)
-    sresgene <- full_join(stagegene, sresgene, by=c("feature_id"))
+    # stagegene <- padj %>% dplyr::select(geneID, gene) %>% unique()
+    # stagegene <- stagegene %>% dplyr::rename(saturn_stageR=gene, feature_id=geneID)
+    # sresgene <- full_join(stagegene, sresgene, by=c("feature_id"))
 
-    stagetx <- padj %>% dplyr::select(txID, transcript) %>% unique()
-    stagetx <- stagetx %>% dplyr::rename(saturn_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- full_join(stagetx, srestx, by=c("feature_id"))
+    # stagetx <- padj %>% dplyr::select(txID, transcript) %>% unique()
+    # stagetx <- stagetx %>% dplyr::rename(saturn_stageR=transcript, feature_id=txID)
+    # stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # srestx <- full_join(stagetx, srestx, by=c("feature_id"))
 
-    write.table(sresgene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(sresgene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    # # write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 rm(resgene)
@@ -173,10 +173,10 @@ rm(skresgene)
 rm(skrestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
-skresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)))
-skrestx <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)))
+# skresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)))
+# skrestx <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)))
 
 checkcount <- read_tsv(paste0(outdir, sprintf("/results/kal_count.csv")))
 checkcount <- checkcount %>% dplyr::select(-feature_id, -gene_id)
@@ -257,72 +257,72 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     
     resgene <- full_join(resgene, res.g, by=c("feature_id"="gene_id"))
     
-    res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% rename(regular_FDR="saturn")
-    res.tx$isoform_id <- lapply(res.tx$isoform_id, function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, res.tx, by=c("feature_id"="isoform_id"))
+    # res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% rename(regular_FDR="saturn")
+    # res.tx$isoform_id <- lapply(res.tx$isoform_id, function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, res.tx, by=c("feature_id"="isoform_id"))
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
     # transcript level p-values from satuRn
-    pvals <- rowData(sumExp)[[sprintf("fitDTUResult_%s-%s", con1, con2)]]$empirical_pval
+    # pvals <- rowData(sumExp)[[sprintf("fitDTUResult_%s-%s", con1, con2)]]$empirical_pval
 
-        # compute gene level q-values
-    geneID <- factor(rowData(sumExp)$gene_id)
-    geneSplit <- split(seq(along = geneID), geneID)
-    pGene <- sapply(geneSplit, function(i) min(pvals[i]))
-    pGene[is.na(pGene)] <- 1
-    theta <- unique(sort(pGene))
+    #     # compute gene level q-values
+    # geneID <- factor(rowData(sumExp)$gene_id)
+    # geneSplit <- split(seq(along = geneID), geneID)
+    # pGene <- sapply(geneSplit, function(i) min(pvals[i]))
+    # pGene[is.na(pGene)] <- 1
+    # theta <- unique(sort(pGene))
 
-    # gene-level significance testing
-    q <- DEXSeq:::perGeneQValueExact(pGene, theta, geneSplit) 
-    qScreen <- rep(NA_real_, length(pGene))
-    qScreen <- q[match(pGene, theta)]
-    qScreen <- pmin(1, qScreen)
-    names(qScreen) <- names(geneSplit)
+    # # gene-level significance testing
+    # q <- DEXSeq:::perGeneQValueExact(pGene, theta, geneSplit) 
+    # qScreen <- rep(NA_real_, length(pGene))
+    # qScreen <- q[match(pGene, theta)]
+    # qScreen <- pmin(1, qScreen)
+    # names(qScreen) <- names(geneSplit)
 
-    # prepare stageR input
-    tx2gene <- as.data.frame(rowData(sumExp)[c("isoform_id", "gene_id")])
-    colnames(tx2gene) <- c("transcript", "gene")
+    # # prepare stageR input
+    # tx2gene <- as.data.frame(rowData(sumExp)[c("isoform_id", "gene_id")])
+    # colnames(tx2gene) <- c("transcript", "gene")
 
-    pConfirmation <- matrix(matrix(pvals),
-        ncol = 1,
-        dimnames = list(rownames(tx2gene), "transcript")
-    )
+    # pConfirmation <- matrix(matrix(pvals),
+    #     ncol = 1,
+    #     dimnames = list(rownames(tx2gene), "transcript")
+    # )
 
-    # create a stageRTx object
-    stageRObj <- stageR::stageRTx(
-        pScreen = qScreen,
-        pConfirmation = pConfirmation,
-        pScreenAdjusted = TRUE,
-        tx2gene = tx2gene
-    )
+    # # create a stageRTx object
+    # stageRObj <- stageR::stageRTx(
+    #     pScreen = qScreen,
+    #     pConfirmation = pConfirmation,
+    #     pScreenAdjusted = TRUE,
+    #     tx2gene = tx2gene
+    # )
 
-    # perform the two-stage testing procedure
-    stageRObj <- stageR::stageWiseAdjustment(
-        object = stageRObj,
-        method = "dtu",
-        alpha = 0.05,
-        allowNA = TRUE
-    )
+    # # perform the two-stage testing procedure
+    # stageRObj <- stageR::stageWiseAdjustment(
+    #     object = stageRObj,
+    #     method = "dtu",
+    #     alpha = 0.05,
+    #     allowNA = TRUE
+    # )
 
-    # retrieves the adjusted p-values from the stageRTx object
-    padj <- stageR::getAdjustedPValues(stageRObj,
-        order = TRUE,
-        onlySignificantGenes = FALSE
-    )
+    # # retrieves the adjusted p-values from the stageRTx object
+    # padj <- stageR::getAdjustedPValues(stageRObj,
+    #     order = TRUE,
+    #     onlySignificantGenes = FALSE
+    # )
 
-    stagegene <- padj %>% dplyr::select(geneID, gene) %>% unique()
-    stagegene <- stagegene %>% dplyr::rename(saturn_stageR=gene, feature_id=geneID)
-    skresgene <- full_join(stagegene, skresgene, by=c("feature_id"))
+    # stagegene <- padj %>% dplyr::select(geneID, gene) %>% unique()
+    # stagegene <- stagegene %>% dplyr::rename(saturn_stageR=gene, feature_id=geneID)
+    # skresgene <- full_join(stagegene, skresgene, by=c("feature_id"))
 
-    stagetx <- padj %>% dplyr::select(txID, transcript) %>% unique()
-    stagetx <- stagetx %>% dplyr::rename(saturn_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    skrestx <- full_join(stagetx, skrestx, by=c("feature_id"))
+    # stagetx <- padj %>% dplyr::select(txID, transcript) %>% unique()
+    # stagetx <- stagetx %>% dplyr::rename(saturn_stageR=transcript, feature_id=txID)
+    # stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # skrestx <- full_join(stagetx, skrestx, by=c("feature_id"))
 
-    write.table(skresgene, paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(skrestx, paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(skresgene, paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    # write.table(skrestx, paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
 }
 
@@ -332,10 +332,10 @@ rm(skresgene)
 rm(skrestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
-skresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)))
-skrestx <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)))
+# skresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)))
+# skrestx <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("saturn", colnames(resgene)))) {
     print("Run saturn on rsem counts")
@@ -407,72 +407,73 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     res.g <- res %>% dplyr::select(gene_id, regular_FDR) %>% group_by(gene_id) %>% summarise(saturn=min(regular_FDR)) 
     resgene <- full_join(resgene, res.g, by=c("feature_id"="gene_id"))
     
-    res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% rename(regular_FDR="saturn")
-    res.tx$isoform_id <- lapply(res.tx$isoform_id, function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, res.tx, by=c("feature_id"="isoform_id"))
+    # res.tx <- res %>% dplyr::select(isoform_id, regular_FDR) %>% rename(regular_FDR="saturn")
+    # res.tx$isoform_id <- lapply(res.tx$isoform_id, function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, res.tx, by=c("feature_id"="isoform_id"))
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
     # transcript level p-values from satuRn
     pvals <- rowData(sumExp)[[sprintf("fitDTUResult_%s-%s", con1, con2)]]$empirical_pval
 
         # compute gene level q-values
-    geneID <- factor(rowData(sumExp)$gene_id)
-    geneSplit <- split(seq(along = geneID), geneID)
-    pGene <- sapply(geneSplit, function(i) min(pvals[i]))
-    pGene[is.na(pGene)] <- 1
-    theta <- unique(sort(pGene))
+    # geneID <- factor(rowData(sumExp)$gene_id)
+    # geneSplit <- split(seq(along = geneID), geneID)
+    # pGene <- sapply(geneSplit, function(i) min(pvals[i]))
+    # pGene[is.na(pGene)] <- 1
+    # theta <- unique(sort(pGene))
 
-    # gene-level significance testing
-    q <- DEXSeq:::perGeneQValueExact(pGene, theta, geneSplit) 
-    qScreen <- rep(NA_real_, length(pGene))
-    qScreen <- q[match(pGene, theta)]
-    qScreen <- pmin(1, qScreen)
-    names(qScreen) <- names(geneSplit)
+    # # gene-level significance testing
+    # q <- DEXSeq:::perGeneQValueExact(pGene, theta, geneSplit) 
+    # qScreen <- rep(NA_real_, length(pGene))
+    # qScreen <- q[match(pGene, theta)]
+    # qScreen <- pmin(1, qScreen)
+    # names(qScreen) <- names(geneSplit)
 
-    # prepare stageR input
-    tx2gene <- as.data.frame(rowData(sumExp)[c("isoform_id", "gene_id")])
-    colnames(tx2gene) <- c("transcript", "gene")
+    # # prepare stageR input
+    # tx2gene <- as.data.frame(rowData(sumExp)[c("isoform_id", "gene_id")])
+    # colnames(tx2gene) <- c("transcript", "gene")
 
-    pConfirmation <- matrix(matrix(pvals),
-        ncol = 1,
-        dimnames = list(rownames(tx2gene), "transcript")
-    )
+    # pConfirmation <- matrix(matrix(pvals),
+    #     ncol = 1,
+    #     dimnames = list(rownames(tx2gene), "transcript")
+    # )
 
-    # create a stageRTx object
-    stageRObj <- stageR::stageRTx(
-        pScreen = qScreen,
-        pConfirmation = pConfirmation,
-        pScreenAdjusted = TRUE,
-        tx2gene = tx2gene
-    )
+    # # create a stageRTx object
+    # stageRObj <- stageR::stageRTx(
+    #     pScreen = qScreen,
+    #     pConfirmation = pConfirmation,
+    #     pScreenAdjusted = TRUE,
+    #     tx2gene = tx2gene
+    # )
 
-    # perform the two-stage testing procedure
-    stageRObj <- stageR::stageWiseAdjustment(
-        object = stageRObj,
-        method = "dtu",
-        alpha = 0.05,
-        allowNA = TRUE
-    )
+    # # perform the two-stage testing procedure
+    # stageRObj <- stageR::stageWiseAdjustment(
+    #     object = stageRObj,
+    #     method = "dtu",
+    #     alpha = 0.05,
+    #     allowNA = TRUE
+    # )
 
-    # retrieves the adjusted p-values from the stageRTx object
-    padj <- stageR::getAdjustedPValues(stageRObj,
-        order = TRUE,
-        onlySignificantGenes = FALSE
-    )
+    # # retrieves the adjusted p-values from the stageRTx object
+    # padj <- stageR::getAdjustedPValues(stageRObj,
+    #     order = TRUE,
+    #     onlySignificantGenes = FALSE
+    # )
 
-    stagegene <- padj %>% dplyr::select(geneID, gene) %>% unique()
-    stagegene <- stagegene %>% dplyr::rename(saturn_stageR=gene, feature_id=geneID)
-    skresgene <- full_join(stagegene, skresgene, by=c("feature_id"))
+    # stagegene <- padj %>% dplyr::select(geneID, gene) %>% unique()
+    # stagegene <- stagegene %>% dplyr::rename(saturn_stageR=gene, feature_id=geneID)
+    # skresgene <- full_join(stagegene, skresgene, by=c("feature_id"))
 
-    stagetx <- padj %>% dplyr::select(txID, transcript) %>% unique()
-    stagetx <- stagetx %>% dplyr::rename(saturn_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    skrestx <- full_join(stagetx, skrestx, by=c("feature_id"))
+    # stagetx <- padj %>% dplyr::select(txID, transcript) %>% unique()
+    # stagetx <- stagetx %>% dplyr::rename(saturn_stageR=transcript, feature_id=txID)
+    # stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # skrestx <- full_join(stagetx, skrestx, by=c("feature_id"))
 
-    write.table(skresgene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(skrestx, paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(skresgene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    # write.table(skrestx, paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
 }
+
 

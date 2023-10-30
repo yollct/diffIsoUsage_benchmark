@@ -1,8 +1,6 @@
-thresholds <- data.frame(tools=c("iso_ktsp","drimseq","dexseq","dturtle","seqGSEA","cuffdiff","junctionseq","saturn","drimseq_stageR", "dexseq_stageR","saturn_stageR"),
-                        thres=c(0.8,0.05,0.05,0.05,0.8,0.05,0.05,0.05,0.05,0.05,0.05))
-row.names(thresholds) <- thresholds$tools
 
 
+colMap <- c(iso_ktsp="#999999", drimseq="#E69F00", dexseq="#56B4E9", dturtle="#783f04", seqGSEA="#F0E442", cuffdiff="#0072B2", junctionseq="#D55E00", saturn="#CC79A7", DSGseq="#9ACD32", nbsplice="#00868B", LimmaDS="#5569da", edgeR="#B536DA")
 
 list_false_positive <- function(methoddf, truthfile, method){
     met <- methoddf[,method]
@@ -68,33 +66,128 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
         mets <- colnames(methoddf)[2:ncol(methoddf)]
         xx<-1
         out <- do.call(cbind, sapply(mets, function(method){
+            methoddf <- methoddf[methoddf$feature_id %in% truthfile$feature_id,]
             namet <- methoddf[,method]
-            names(namet) <- methoddf$feature_id
+            
+            names(namet) <- "value"
+            namet$feature_id <- methoddf$feature_id
             x<-thresholds[method,]$thres
-            print(x)
-            met <- lapply(namet, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
+            
+
+            namet$value <- lapply(namet$value, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
+            
             #precisions <- sapply(thresholds, function(x){
-            boomet <- lapply(met, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
-            if (tx){
-                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
-            } else {
-                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
-            }
-            pp <- length(names(met)[boomet])
+            boomet <- lapply(namet$value, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
+
+            tp <- sum(unique(namet$feature_id[boomet]) %in% truthfile[truthfile$status==1,]$feature_id) 
+            fp <- sum(!unique(namet$feature_id[boomet]) %in% truthfile[truthfile$status==1,]$feature_id) 
+            fn <- sum(!unique(namet$feature_id[!boomet]) %in% truthfile[truthfile$status==0,]$feature_id) 
+        
+            pp <- length(unique(namet$feature_id[boomet]))
             precisions <- tp/pp
+
              #   })
             #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
             #recall <- sapply(thresholds, function(x){
-            if (tx){
-                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
-            } else {
-                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
-            } 
+            
             p <- length(truthfile[truthfile$status==1,]$feature_id)
             recall <- tp/p
+
+            f1 <- 2*tp/(2*tp+fp+fn)
             #    return(tp/p)})
             xx <- xx+1
-            outout <- data.frame(fdr=c(precisions, recall), type=rep(c("precision", "recall"), each=length(precisions)), tool=rep(method, length(precisions)*2), thresholds=rep(x, 2))
+            outout <- data.frame(fdr=c(precisions, recall,f1, tp, p, pp), type=rep(c("precision", "recall","f1", "truepos", "realpos", "detectedpos"), each=length(precisions)), tool=rep(method, length(precisions)*3), thresholds=rep(x, 3))
+            list(t(outout))
+            }
+        ))
+    } else {
+        out <- data.frame(row.names=c("fdr","type","tool","thresholds","splits"))
+        if (split=='events'){
+            splitcat <- c("DTE", "DTU", "IS")
+        } else {
+            splitcat <- unique(truthfile[split][,1])
+        }
+        print(splitcat)
+        for (i in splitcat){
+            splitted_truth <- truthfile %>% dplyr::filter(truthfile[split]==i)
+            
+            not_this_truth <- truthfile[truthfile[split]!=i,]$feature_id 
+
+            
+            ## filter gene that is not this category
+            splitted_method <- methoddf %>% dplyr::filter(!feature_id %in% not_this_truth)
+            
+            
+            thisout <- do.call(cbind, sapply(colnames(splitted_method)[2:ncol(splitted_method)], function(method){
+                namet <- splitted_method[,method]
+                names(namet) <- "value"
+                namet$feature_id <- splitted_method$feature_id
+                
+                x <- thresholds[method,]$thres
+                namet$value <- lapply(namet$value, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
+                print(method)
+                boomet <- lapply(namet$value, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
+                #precisions <- sapply(thresholds, function(x){
+                
+                tp <- sum(unique(namet$feature_id[boomet]) %in% splitted_truth[splitted_truth$status==1,]$feature_id) 
+                fp <- sum(!unique(namet$feature_id[boomet]) %in% splitted_truth[splitted_truth$status==1,]$feature_id) 
+                fn <- sum(!unique(namet$feature_id[!boomet]) %in% splitted_truth[splitted_truth$status==0,]$feature_id) 
+                
+                pp <- length(unique(namet$feature_id[boomet]))
+                print(pp)
+                precisions <- tp/pp
+                f1 <- 2*tp/(2*tp+fp+fn)
+                #})
+                #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
+                #recall <- sapply(thresholds, function(x){
+                if (tx){
+                    tp <- sum(namet$feature_id[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
+                    p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
+                } else {
+                    tp <- sum(namet$feature_id[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
+                    p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
+                }
+            
+                
+                recall <- tp/p
+    
+            #})
+                outout <- data.frame(fdr=c(precisions, recall, f1, tp, p, pp), type=rep(c("precision", "recall", "f1", "truepos", "realpos", "detectedpos"), each=length(precisions)), tool=rep(method, length(precisions)*3), thresholds=rep(x,3), splits=rep(i, length(precisions)*3))
+                list(t(outout))
+            }))
+            out <- cbind(out, thisout)
+        }
+    }
+
+    return(out)
+}
+
+cal_f1 <- function(methoddf, truthfile, split=NULL, tx=TRUE){
+    if (is.null(split)){
+        mets <- colnames(methoddf)[2:ncol(methoddf)]
+        xx<-1
+        out <- do.call(cbind, sapply(mets, function(method){
+            namet <- methoddf[,method]
+            names(namet) <- methoddf$feature_id
+            x<-thresholds[method,]$thres
+          
+            met <- lapply(namet, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
+            #precisions <- sapply(thresholds, function(x){
+            boomet <- lapply(met, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
+            
+            tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
+            fp <- sum(!names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
+            fn <- sum(!names(met)[!boomet] %in% truthfile[truthfile$status==0,]$feature_id) 
+            
+            pp <- length(names(met)[boomet])
+            f1 <- 2*tp/(2*tp+fp+fn)
+             #   })
+            #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
+            #recall <- sapply(thresholds, function(x){
+            
+            #    return(tp/p)})
+            xx <- xx+1
+            outout <- data.frame(f=f1, type="f1", tool=method)
             list(t(outout))
             }
         ))
@@ -112,28 +205,19 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
 
                 boomet <- lapply(met, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
                 #precisions <- sapply(thresholds, function(x){
-                if (tx){
-                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
-                } else {
-                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
-                }
+                tp <- sum(names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
+                fp <- sum(!names(met)[boomet] %in% truthfile[truthfile$status==1,]$feature_id) 
+                fn <- sum(!names(met)[!boomet] %in% truthfile[truthfile$status==0,]$feature_id) 
+                print(tp)
                 pp <- length(names(met)[boomet])
-                precisions <- tp/pp
+                f1 <- 2*tp/(2*tp+fp+fn)
                 #})
                 #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
                 #recall <- sapply(thresholds, function(x){
-                if (tx){
-                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
-                    p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
-                } else {
-                    tp <- sum(names(met)[boomet] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
-                    p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
-                }
             
-                
-                recall <- tp/p
+            
             #})
-                outout <- data.frame(fdr=c(precisions, recall), type=rep(c("precision", "recall"), each=length(precisions)), tool=rep(method, length(precisions)*2), thresholds=rep(x,2), splits=rep(i, length(precisions)*2))
+                outout <- data.frame(fdr=f1, type="f1", tool=method, splits=split)
                 list(t(outout))
             }))
             out <- cbind(out, thisout)
@@ -143,59 +227,6 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
     return(out)
 }
 
-cal_pre_re_curve <- function(methoddf, truthfile, split=NULL){
-    if (is.null(split)){
-        mets <- colnames(methoddf)[2:ncol(methoddf)]
-        out <- do.call(rbind, sapply(mets, function(method){
-            met <- methoddf[,method]
-            names(met) <- methoddf$feature_id
-            
-            thresholds <- seq(0,max(met), 0.1)
-            precisions <- sapply(thresholds, function(x){
-                tp <- sum(names(met)[met<x] %in% truthfile[truthfile$status==1,]$feature_id) 
-                pp <- length(names(met)[met<x])
-                tp/pp
-                })
-
-                
-            recall <- sapply(thresholds, function(x){
-                tp <- sum(names(met)[met<x] %in% truthfile[truthfile$status==1,]$feature_id) 
-                p <- length(truthfile[truthfile$status==1,]$feature_id)
-                return(tp/p)})
-
-            outout <- data.frame(fdr=c(precisions, recall), type=rep(c("precision", "recall"), each=length(precisions)), tool=rep(method, length(precisions)*2), thresholds=rep(thresholds, 2))
-            list(t(outout))
-            }
-        ))
-    } else {
-        out <- data.frame(row.names=c("fdr","type","tool","thresholds","splits"))
-        for (i in unique(truthfile[split][,1])){
-            splitted_truth <- truthfile %>% dplyr::filter(truthfile[split]==i)
-            not_this_truth <- truthfile[truthfile[split]!=i,]$feature_id    
-            splitted_method <- methoddf %>% dplyr::filter(!feature_id %in% not_this_truth)
-            thisout <- do.call(cbind, sapply(colnames(splitted_method)[2:ncol(splitted_method)], function(method){
-                met <- splitted_method[,method]
-                names(met) <- splitted_method$feature_id
-                precisions <- sapply(thresholds, function(x){
-                    tp <- sum(names(met)[met<x] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
-                    pp <- length(names(met)[met<x])
-                    tp/pp
-                })
-                
-                recall <- sapply(thresholds, function(x){
-                    tp <- sum(names(met)[met<x] %in% splitted_truth[splitted_truth$status==1,]$feature_id)
-                    p <- length(splitted_truth[splitted_truth$status==1,]$feature_id)
-                    tp/p
-                })
-                outout <- data.frame(fdr=c(precisions, recall), type=rep(c("precision", "recall"), each=length(precisions)), tool=rep(method, length(precisions)*2), thresholds=rep(thresholds,2), splits=rep(i, length(precisions)*2))
-                list(t(outout))
-            }))
-            out <- cbind(out, thisout)
-        }
-    }
-
-    return(out)
-}
 
 plot_upset <- function(methoddf, thresholds){
     x<-1
@@ -229,9 +260,9 @@ pivot_output <- function(outputpr, split=NULL){
     } else if (split=="events") {
         wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "0")
         wideoutputpr$tool <- factor(wideoutputpr$tool)
-        wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("DTE","DTU","DTEDTU"))
+        wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("DTE","DTU","IS"))
         wideoutputpr$recall[is.nan(wideoutputpr$recall)] = 0
-    }
+    } 
 
     return(wideoutputpr)
 }
@@ -314,4 +345,39 @@ compare_tools <- function(x,y,z=NULL,split=FALSE){
 
 compare_stager <- function(x){
 
+}
+
+
+### colors
+pal_ramp <- function(values) {
+  force(values)
+  function(n) {
+    if (n <= length(values)) {
+      values[seq_len(n)]
+    } else {
+      colorRampPalette(values, alpha = TRUE)(n)
+    }
+  }
+}
+
+pal_adaptive <- function(name, palette, alpha = 1) {
+  if (alpha > 1L | alpha <= 0L) stop("alpha must be in (0, 1]")
+
+  raw_cols <- ggsci:::ggsci_db[[name]][[palette]]
+  raw_cols_rgb <- col2rgb(raw_cols)
+  alpha_cols <- rgb(
+    raw_cols_rgb[1L, ], raw_cols_rgb[2L, ], raw_cols_rgb[3L, ],
+    alpha = alpha * 255L, names = names(raw_cols),
+    maxColorValue = 255L
+  )
+
+  pal_ramp(unname(alpha_cols))
+}
+
+scale_color_adaptive <- function(name, palette, alpha = 1, ...) {
+  ggplot2::discrete_scale("colour", name, pal_adaptive(name, palette, alpha), ...)
+}
+
+scale_fill_adaptive <- function(name, palette, alpha = 1, ...) {
+  ggplot2::discrete_scale("fill", name, pal_adaptive(name, palette, alpha), ...)
 }

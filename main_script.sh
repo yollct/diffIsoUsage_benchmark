@@ -6,7 +6,10 @@ PATH=$PATH:/nfs/home/students/chit/samtools-1.13
 PATH=$PATH:/nfs/home/students/chit/RSEM-1.3.2/
 PATH=$PATH:/nfs/home/students/chit/tophat-2.1.1.Linux_x86_64
 PATH=$PATH:/nfs/home/students/chit/bowtie2-2.4.5-linux-x86_64
-PATH=$PATH:/nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64
+PATH=$PATH:/nfs/home/students/chit/STAR-2.7.9a/bin/Linux_x86_64
+PATH=$PATH:/nfs/home/students/chit/DSGseq/DSG-0.1.0/SeqExpress
+PATH=$PATH:/nfs/home/students/chit/bedtools2/bin
+#PATH=$PATH:/nfs/home/students/chit/.conda/envs/nease/pkgs/r-base-3.6.1-haffb61f_2/bin
 
 set -euo pipefail
 # Transform long options to short ones
@@ -98,6 +101,8 @@ fi
 # pigz -d ${readfilesdir}/${i}
 # done
 # wait
+
+
 
 
 
@@ -209,7 +214,28 @@ eval "$(conda shell.bash hook)"
 conda activate nease
 echo "conda activated"
 
-ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --will-cite -j $nCores "
+# chrs='1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22'
+# for thistmp in $(find ${outputdir}/alignments/ | grep "Aligned.sortedByCoord.out.bam$" | grep -v "tmp"); do
+#   for chr in ${chrs}; do
+#     echo separate bam $chr
+
+#     if ! test -s ${thistmp}.bai; then
+#       samtools index -@ 12 $thistmp 
+#     fi 
+#     samtools view -b -h -o ${thistmp}_tmp${chr}.bam ${thistmp} $chr
+#     # (samtools view -H ${thistmp}; samtools view ${thistmp} | awk -v a=$chr '/^@/ || $3 == a ') | samtools view -bo ${thistmp}_tmp${chr}.bam &
+#   done 
+# done
+
+# for thistmp in $(find ${outputdir}/alignments/ | grep "Aligned.sortedByCoord.out.bam$"); do
+#   (samtools view -H ${thistmp}; samtools view ${thistmp} | awk '/^@/ || !($3 >= 1 && $3 <23)') | samtools view -bo ${thistmp}_tmp23.bam
+# done
+
+bams='1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23'
+samples=$(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq)
+
+
+parallel --will-cite -j $nCores "
   echo running star...
 
   if [ $pairstate == "paired" ]; then
@@ -233,7 +259,7 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
       then
       echo {} running STAR
       STAR --genomeDir ${index} \
-        --runThreadN 12 \
+        --runThreadN 2 \
         --readFilesIn  ${readfilesdir}/{}_1.${fastaq} ${readfilesdir}/{}_2.${fastaq} \
         --readFilesCommand cat \
         --outSAMstrandField intronMotif \
@@ -248,6 +274,11 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
 
       echo DONE STAR for {}
     fi
+
+    # if ! test -s ${outputdir}/alignments/{}/{}Aligned.toTranscriptome.out.bam.bai; then
+    #   samtools index -@ 8 ${outputdir}/alignments/{}/{}Aligned.toTranscriptome.out.bam
+    # fi
+
     ! test -d ${outputdir}/rsem_out && mkdir -p ${outputdir}/rsem_out || true
     ! test -d ${outputdir}/rsem_out/{} && mkdir -p ${outputdir}/rsem_out/{} || true
 
@@ -257,22 +288,9 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
       echo DONE for RSEM {}
     fi
 
-    ! test -d ${outputdir}/qort && mkdir -p ${outputdir}/qort || true
-    ! test -d ${outputdir}/qort/{} && mkdir -p ${outputdir}/qort/{} || true
-
-    if ! test -s ${outputdir}/qort/{}/QC.spliceJunctionCounts.knownSplices.txt.gz; then
-      echo {} running QoRT
-      java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
-                --stranded \
-                ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam \
-                ${gtf} \
-                ${outputdir}/qort/{}/
-      echo DONE for QoRT {}
-    fi
-
   else 
     echo running for single-end read data
-    echo Transcript quantification with Salmon for Sample: {}
+    echo Transcript quantification with Salmon for Sample: {1}
     
     ! test -d ${outputdir}/salmon_out/{} && mkdir -p ${outputdir}/salmon_out/{} || true # to allow mkdir to fail gracefully, we add '|| true'
     if ! test -f ${outputdir}/salmon_out/{}/quant.sf
@@ -286,13 +304,16 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
 
     echo Genome Alignment with STAR for Sample: {}
     ! test -d ${outputdir}/alignments/ && mkdir -p ${outputdir}/alignments/ || true # to allow mkdir to fail gracefully, we add '|| true'
+    
     ! test -d ${outputdir}/alignments/{} && mkdir -p ${outputdir}/alignments/{} || true
+    rm -rf ${outputdir}/alignments/{}/tmp/ && mkdir ${outputdir}/alignments/{}/tmp/
+    chmod -R 777 ${outputdir}/alignments/{}/tmp/
 
     if ! test -s ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam 
       then
       echo {} running STAR
       STAR --genomeDir ${index} \
-        --runThreadN 12 \
+        --runThreadN 8 \
         --readFilesIn  ${readfilesdir}/{}.${fastaq} \
         --readFilesCommand cat \
         --outSAMstrandField intronMotif \
@@ -303,16 +324,69 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
         --alignSoftClipAtReferenceEnds No \
         --quantMode TranscriptomeSAM \
         --sjdbGTFfile $gtf \
-        --outFileNamePrefix ${outputdir}/alignments/{}/{}
+        --outFileNamePrefix ${outputdir}/alignments/{}/{} 
 
       echo DONE STAR for {}
     else 
       echo STAR is done {}. skipped
     fi
+
+   
+
+    ! test -d ${outputdir}/rsem_out && mkdir -p ${outputdir}/rsem_out || true
+    ! test -d ${outputdir}/rsem_out/{} && mkdir -p ${outputdir}/rsem_out/{} || true
+    
+    if ! test -f ${outputdir}/rsem_out/{}/{}.genes.results
+    then
+      rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64 ${readfilesdir}/{}.${fastaq} ${index}/asim ${outputdir}/rsem_out/{}/{}
+  
+    fi
+      
+  fi
+  " ::: $samples 
+
+
+parallel --will-cite -j $nCores "
+  echo running qort
+  if [ $pairstate == "paired" ]; then
+    ! test -d ${outputdir}/qort && mkdir -p ${outputdir}/qort || true
+    ! test -d ${outputdir}/qort/{1} && mkdir -p ${outputdir}/qort/{1} || true
+
+    if ! test -s ${outputdir}/qort/{}/QC.spliceJunctionCounts.knownSplices.txt.gz; then
+      echo {} running QoRT
+      java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+                --stranded \
+                ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam \
+                ${gtf} \
+                ${outputdir}/qort/{}/
+      echo DONE for QoRT {}
+    fi
+    
+    # echo {1} running QoRT sub {2}
+    # ! test -d ${outputdir}/qort{2} && mkdir -p ${outputdir}/qort{2} || true
+    # ! test -d ${outputdir}/qort{2}/{1} && mkdir -p ${outputdir}/qort{2}/{1} || true
+
+
+    # if ! test -s ${outputdir}/qort{2}/{1}/QC.geneCounts.txt.gz; then
+    #   echo ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam
+    #   java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+    #             --stranded \
+    #             ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam \
+    #             ${gtf} \
+    #             ${outputdir}/qort{2}/{1}/
+    #   echo DONE for QoRT {1}
+    # else 
+    #   echo QoRT is done {1}. skipped
+    # fi
+  else 
+     # if ! test -s ${outputdir}/alignments/{1}/{1}Aligned.toTranscriptome.out.bam.bai; then
+    #   samtools sort -@ 8 -o ${outputdir}/alignments/{1}/{1}Aligned.toTranscriptome.sorted.out.bam ${outputdir}/alignments/{1}/{1}Aligned.toTranscriptome.out.bam
+    #   samtools index -@ 8 ${outputdir}/alignments/{1}/{1}Aligned.toTranscriptome.sorted.out.bam
+    # fi
     
     echo {} running QoRT
     ! test -d ${outputdir}/qort && mkdir -p ${outputdir}/qort || true
-    ! test -d ${outputdir}/qort/{} && mkdir -p ${outputdir}/qort/{} || true
+    ! test -d ${outputdir}/qort/{1} && mkdir -p ${outputdir}/qort/{} || true
 
     if ! test -s ${outputdir}/qort/{}/QC.geneCounts.txt.gz; then
       echo {} running QoRT
@@ -327,60 +401,123 @@ ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | se
       echo QoRT is done {}. skipped
     fi
 
-    ! test -d ${outputdir}/rsem_out && mkdir -p ${outputdir}/rsem_out || true
-    ! test -d ${outputdir}/rsem_out/{} && mkdir -p ${outputdir}/rsem_out/{} || true
-    
-    if ! test -f ${outputdir}/rsem_out/{}/{}.genes.results
-    then
-      rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64  ${readfilesdir}/{}.${fastaq} ${index}/asim ${outputdir}/rsem_out/{}/{}
-  
-    fi
-      
+    # echo {} running QoRT sub 1
+    # ! test -d ${outputdir}/qort1 && mkdir -p ${outputdir}/qort1 || true
+    # ! test -d ${outputdir}/qort1/{} && mkdir -p ${outputdir}/qort1/{} || true
+
+
+    # if ! test -s ${outputdir}/qort1/{}/QC.geneCounts.txt.gz; then
+    #   echo {} running QoRT
+    #   java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+    #             --stranded \
+    #             --singleEnded \
+    #             ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam_tmp1.bam \
+    #             ${gtf} \
+    #             ${outputdir}/qort1/{}/
+    #   echo DONE for QoRT {}
+    # else 
+    #   echo QoRT is done {}. skipped
+    # fi
+
+    # echo {1} running QoRT sub {2}
+    # ! test -d ${outputdir}/qort{2} && mkdir -p ${outputdir}/qort{2} || true
+    # ! test -d ${outputdir}/qort{2}/{1} && mkdir -p ${outputdir}/qort{2}/{1} || true
+
+
+    # echo {1} running QoRT sub {2}
+    # ! test -d ${outputdir}/qort{2} && mkdir -p ${outputdir}/qort{2} || true
+    # ! test -d ${outputdir}/qort{2}/{1} && mkdir -p ${outputdir}/qort{2}/{1} || true
+
+
+    # if ! test -s ${outputdir}/qort{2}/{1}/QC.geneCounts.txt.gz; then
+    #   echo ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam
+    #   java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+    #             --stranded \
+    #             --singleEnded \
+    #             ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam \
+    #             ${gtf} \
+    #             ${outputdir}/qort{2}/{1}/
+    #   echo DONE for QoRT {1}
+    # else 
+    #   echo QoRT is done {1}. skipped
+    # fi
+
   fi
-  "
- 
+
+" ::: $samples 
+
+
 
 conda activate htseq
 
-ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --will-cite -j $nCores "
-  echo running star...
+#ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --gnu --will-cite -j $nCores "
+for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq); do
+  echo running htseq...
   
   if [ $pairstate == "paired" ]; then
-    
-
+  
     ! test -d ${outputdir}/results/htseq_exon && mkdir -p ${outputdir}/results/htseq_exon || true
 
-    if ! test -s ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam; 
+    if ! test -s ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam; 
       then
-      samtools view -h ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam
+      samtools view -h ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam
     fi 
 
-    python ${path}/runner/seqGSEA/count_in_exons.py -p yes ${index}/this_gtf.exon ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam ${outputdir} {} ${meta}
-    echo DONE HTSeq {}
+    if [ -z "$(ls -A ${outputdir}/results/htseq_exon)" ]; then
+    #if ! test -d ${outputdir}/results/htseq_exon; then
+      python ${path}/runner/seqGSEA/count_in_exons.py -p yes ${index}/this_gtf.exon ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam ${outputdir} ${fas} ${meta}
+    fi
+    
+    echo DONE HTSeq ${fas}
 
   else 
     echo running for single-end read data
-    echo Transcript quantification with Salmon for Sample: {}
+    echo Transcript quantification with Salmon for Sample: ${fas}
 
     ! test -d ${outputdir}/results/htseq_exon && mkdir -p ${outputdir}/results/htseq_exon || true
 
-    if ! test -s ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam; 
+    if ! test -s ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam; 
       then
-      samtools view -h ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam
+      samtools view -h ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam
+
+      python ${path}/runner/seqGSEA/count_in_exons.py ${index}/this_gtf.exon ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam ${outputdir} ${fas} ${meta}
     fi 
 
-    python ${path}/runner/seqGSEA/count_in_exons.py ${index}/this_gtf.exon ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.sam ${outputdir} {} ${meta}
-    echo DONE HTSeq {}
+    echo DONE HTSeq ${fas}
   
   fi
-"
+done
 
 
-  
-  
-echo hi
+##### fix the HTSeq count files  ---> remove quotes that generate eroors in seqGSEA
+# pushd  ${outputdir}/results/htseq_exon
+# for file in $(ls); do sed 's/\"//g' $file > ${file}_clean;  mv ${file}_clean ${file}; done;
+# popd
 
 conda activate nease
+################### DSGSeq ###################
+#ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --gnu  --will-cite -j $nCores "
+
+for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq); do
+  echo running DSGseq...
+
+  ! test -d ${outputdir}/results/dsgseq && mkdir -p ${outputdir}/results/dsgseq || true
+
+  if ! test -s ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed; 
+    then
+    bamToBed -i ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed &
+  fi 
+  
+  if ! test -s ${outputdir}/results/dsgseq/${fas}.count; then
+    SeqExpress count ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed ${genepred} ${outputdir}/results/dsgseq/${fas}.count &
+  fi
+
+done
+
+
+
+
+
 
 if ! test -f ${outputdir}/results/salmon_count.csv;
   then
@@ -405,9 +542,9 @@ fi
 #   bash ${path}/run_cufflinks.sh --config ${config}
 # fi 
 
-if ! test -d ${outputdir}/results/jseq_${groupl[0]}_${groupl[1]}_; then
-  singularity run --bind ${outputdir}:/MOUNT /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
-fi
+# if ! test -d ${outputdir}/results/jseq_${groupl[0]}_${groupl[1]}_; then
+#   singularity run --bind ${outputdir}:/MOUNT /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
+# fi
 #python ${path}/scripts/extract_salmon.py --dir ${readfilesdir}/salmon_out --outputfile ${readfilesdir}/results/salmon_count.csv --pattern sample --type TPM
 
 
@@ -434,6 +571,8 @@ fi
 ###################### Run cufflinks for STAR resultss #######
 #run cufflink in separate scripts 'cos it takes too long.....
 ############################################################
+
+
 
 echo "Done preprocessing."
 echo $sim
@@ -472,17 +611,20 @@ then
   Rscript ${path}/runner/dexseq.R $outputdir $path $meta ${groupl[@]}
 fi
 
+
+R --version
 echo "#########################"
 echo "Running DTurtle from R"
 echo "#########################"
-if ! grep -q "dturtle" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "dturtle" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/dtu.R $outputdir $path $meta $gtf ${groupl[@]}
 fi
+
 echo "#########################"
 echo "Running iso-KTSP from R"
 echo "#########################"
-if ! grep -q "iso_ktsp" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "iso_ktsp" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/iso-ktsp.R $outputdir $path ${groupl[@]}
 fi
@@ -497,18 +639,32 @@ if ! grep -q "seqGSEA" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${group
   for file in $(ls ${outputdir}/results/htseq_exon); 
   do
     sed 's/"//g' ${outputdir}/results/htseq_exon/${file} > ${outputdir}/results/htseq_exon/temp.txt 
-    mv ${outputdir}/results/htseq_exon/temp.txt ${outputdir}/results/htseq_exon/${file}
+    #mv ${outputdir}/results/htseq_exon/temp.txt ${outputdir}/results/htseq_exon/${file}
   done
   Rscript ${path}/runner/seqGSEA/seqgsea.R $outputdir $path $meta $index ${groupl[@]}
 fi
 
+# conda install -c r r r-essentials
+
 echo "#########################"
 echo "Running JunctionSeq from R"
 echo "#########################"
-if ! grep -q "junctionseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+# if ! grep -q "junctionseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+#   then
+#   # singularity run --bind ${outputdir}:/MOUNT --bind /nfs/home/students/chit/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
+#   #docker run -v ${outputdir}:/MOUNT --rm --name 'jcseq' jcseq 
+#   Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
+# fi
+
+
+echo "#########################"
+echo "Running NBSplice from R"
+echo "#########################"
+if ! grep -q "nbsplice" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
   then
-  #docker run -v ${outputdir}:/MOUNT --rm --name 'jcseq' jcseq 
-  Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
+  singularity run --bind ${outputdir}:/MOUNT --bind /nfs/proj/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_nbsplice/nbsplice.sif
+  #docker run -v ${outputdir}:/MOUNT --rm --name 'nbsplice' nbsplice
+  #Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
 fi
 
 echo "#########################"
@@ -516,7 +672,7 @@ echo "Running Cuffdiff from R"
 echo "#########################"
 if ! grep -q "cuffdiff" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
 then
-  Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
+  # Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
 fi
 
 
@@ -526,4 +682,58 @@ echo "#########################"
 if ! grep -q "saturn" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "saturn" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "saturn" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/saturn.R $outputdir $path $meta ${groupl[@]} 
+fi
+
+echo "#########################"
+echo "Running DSGseq from R"
+echo "#########################"
+
+if ! grep -q "DSGseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "DSGseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "DSGseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+  
+
+  ######### change here to fit the group name of meta data ###########
+  group1=$(awk -v outfile=${outputdir} 'BEGIN{FS=OFS=" "}{ if ($2 == "T") print outfile"/results/dsgseq/"$1".count" }' ${meta} | grep -v "group") 
+  group2=$(awk -v outfile=${outputdir} 'BEGIN{FS=OFS=" "}{ if ($2 == "N") print outfile"/results/dsgseq/"$1".count" }' ${meta} | grep -v "group") 
+
+  pushd /nfs/home/students/chit/DSGseq/DSG-0.1.0/
+  Rscript DSGNB.R $(echo ${group1[@]} | wc -w) ${group1[@]} $(echo ${group2[@]} | wc -w) ${group2[@]} ${outputdir}/results/DSGseq_results.diff
+  popd
+
+  Rscript ${path}/runner/dsgseq.R $outputdir $path ${groupl[@]}
+fi 
+
+echo "#########################"
+echo "Running Limma from R"
+echo "#########################"
+if ! grep -q "LimmaDS" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "LimmaDS" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "LimmaDS" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+then
+  Rscript ${path}/runner/limma.R $outputdir $path $meta ${groupl[@]} 
+fi
+
+echo "#########################"
+echo "Running edgeR from R"
+echo "#########################"
+if ! grep -q "edgeR" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "edgeR" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "edgeR" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+then
+  Rscript ${path}/runner/edgeR.R $outputdir $path $meta ${groupl[@]} 
+fi
+
+
+# echo "#########################"
+# echo "Running IUTA from R"
+# echo "#########################"
+
+# if ! grep -q "IUTA" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "IUTA" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "IUTA" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+# then
+#   cp /nfs/scratch/chit/ref/ensembl_98/iuta_transcriptinfo.gtf ${outputdir}
+#   singularity run --bind ${outputdir}:/MOUNT --bind /nfs/proj/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing2docker/iuta.sif
+
+# fi
+
+echo "#########################"
+echo "Running rDiff from R"
+echo "#########################"
+if ! grep -q "rDiff" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "rDiff" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "rDiff" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+then
+  singularity run --bind ${outputdir}:/MOUNT --bind /nfs/proj/is_benchmark/Rlib:/usr/local/lib/R/site-library --bind /nfs/scratch/chit/ref/ensembl_98:/ref /nfs/proj/is_benchmark/runner/sing2docker/rdiff.sif 
 fi

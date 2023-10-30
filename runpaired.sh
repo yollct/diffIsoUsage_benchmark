@@ -1,11 +1,14 @@
 #!/bin/bash
 
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=10
-#SBATCH --output=/nfs/scratch/chit/paired81.out
-#SBATCH --error=/nfs/scratch/chit/paired81.err
-#SBATCH --job-name=paired81
-#SBATCH --mem-per-cpu=20G
+#SBATCH --cpus-per-task=2
+#SBATCH --output=/nfs/scratch/chit/paired82.out
+#SBATCH --error=/nfs/scratch/chit/paired82.err
+#SBATCH --job-name=pair82
+#SBATCH --mem-per-cpu=30G
+#SBATCH --time=4-00:00:00
+#SBATCH --partition=exbio-cpu
+
 
 #path="/nfs/home/students/chit/is_benchmark"
 

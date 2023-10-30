@@ -18,10 +18,10 @@ print(con)
 
 print("in dexseq")
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
 
-sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)))
-srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)))
+# sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)))
+# srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)))
 
 meta1 = read.csv(meta, sep="\t")
 row.names(meta1) <- meta1$sample_id
@@ -92,27 +92,27 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     resgene <- full_join(resgene, dxr.g, by=c("feature_id"="gene"))
     resgene <- resgene %>% dplyr::rename(`dexseq`=qval)
 
-    stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
-    stagegene <- stagegene %>% dplyr::rename(dexseq_stageR=gene, feature_id=geneID)
-    sresgene <- full_join(stagegene, sresgene, by=c("feature_id"="feature_id"))
-    #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
+    # stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
+    # stagegene <- stagegene %>% dplyr::rename(dexseq_stageR=gene, feature_id=geneID)
+    # sresgene <- full_join(stagegene, sresgene, by=c("feature_id"="feature_id"))
+    # #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
 
 
-    dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
-    dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
+    # dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
+    # dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
 
-    stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
-    stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- full_join(stagetx, srestx, by=c("feature_id"="feature_id"))
+    # stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
+    # stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
+    # stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # srestx <- full_join(stagetx, srestx, by=c("feature_id"="feature_id"))
     #restx <- restx %>% dplyr::rename(`dexseq_stageR`=transcript, feature_id=txID)
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
-    write.table(sresgene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(sresgene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    # write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 } 
 ### run kallisto counts
 
@@ -126,10 +126,10 @@ rm(sresgene)
 rm(srestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
-sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)))
-srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)))
+# sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)))
+# srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("dexseq", colnames(resgene)))) {
     print("Running DEXSeq kallisto counts")
@@ -187,27 +187,27 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     resgene <- full_join(resgene, dxr.g, by=c("feature_id"="gene"))
     resgene <- resgene %>% dplyr::rename(`dexseq`=qval)
 
-    stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
-    stagegene <- stagegene %>% dplyr::rename(dexseq_stageR=gene, feature_id=geneID)
-    sresgene <- full_join(stagegene, sresgene, by=c("feature_id"="feature_id"))
-    #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
+    # stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
+    # stagegene <- stagegene %>% dplyr::rename(dexseq_stageR=gene, feature_id=geneID)
+    # sresgene <- full_join(stagegene, sresgene, by=c("feature_id"="feature_id"))
+    # #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
 
 
-    dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
-    dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
+    # dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
+    # dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
 
-    stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
-    stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- full_join(stagetx, srestx, by=c("feature_id"="feature_id"))
-    #restx <- restx %>% dplyr::rename(`dexseq_stageR`=transcript, feature_id=txID)
+    # stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
+    # stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
+    # stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # srestx <- full_join(stagetx, srestx, by=c("feature_id"="feature_id"))
+    # #restx <- restx %>% dplyr::rename(`dexseq_stageR`=transcript, feature_id=txID)
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
-    write.table(sresgene, paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(srestx, paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(sresgene, paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    # write.table(srestx, paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 rm(genename)
@@ -220,10 +220,10 @@ rm(sresgene)
 rm(srestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
-sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)))
-srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)))
+# sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)))
+# srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)))
 
 ########## RSEM #########
 if (!any(grepl("dexseq", colnames(resgene)))) {
@@ -277,26 +277,26 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     resgene <- full_join(resgene, dxr.g, by=c("feature_id"="gene"))
     resgene <- resgene %>% dplyr::rename(`dexseq`=qval)
 
-    stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
-    stagegene <- stagegene %>% dplyr::rename(dexseq_stageR=gene, feature_id=geneID)
-    sresgene <- full_join(stagegene, sresgene, by=c("feature_id"="feature_id"))
-    #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
+    # stagegene <- dex.padj %>% dplyr::select(geneID, gene) %>% unique()
+    # stagegene <- stagegene %>% dplyr::rename(dexseq_stageR=gene, feature_id=geneID)
+    # sresgene <- full_join(stagegene, sresgene, by=c("feature_id"="feature_id"))
+    # #resgene <- resgene %>% dplyr::rename(`dexseq_stageR`=gene, feature_id=geneID)
 
 
-    dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
-    dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
+    # dxr.tx <- dxr %>% dplyr::select(featureID, padj) %>% dplyr::rename(dexseq=padj, feature_id=featureID)
+    # dxr.tx$feature_id <- lapply(dxr.tx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # restx <- full_join(restx, dxr.tx, by=c("feature_id"="feature_id"))
 
-    stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
-    stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
-    stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    srestx <- full_join(stagetx, srestx, by=c("feature_id"="feature_id"))
+    # stagetx <- dex.padj %>% dplyr::select(txID, transcript) %>% unique()
+    # stagetx <- stagetx %>% dplyr::rename(dexseq_stageR=transcript, feature_id=txID)
+    # stagetx$feature_id <- lapply(stagetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    # srestx <- full_join(stagetx, srestx, by=c("feature_id"="feature_id"))
     
     #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
-    write.table(sresgene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(srestx, paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(sresgene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    # write.table(srestx, paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }

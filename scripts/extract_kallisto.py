@@ -25,6 +25,7 @@ if __name__=="__main__":
         print(x)
         #if args.pattern in x:
         tmp = pd.read_csv(os.path.join(args.dir, x, "abundance.tsv"), sep="\t")
+        print(tmp.head())
         if args.type=='TPM':
             reads.append(pd.Series(tmp['tpm'], name=x))
         else:

@@ -12,7 +12,7 @@ print(con2)
 ktsp_res <- readLines(paste0(outdir, sprintf("/results/salmon_isoktsp_output_%s_%s.txt", con1, con2)))
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("iso_ktsp", colnames(resgene)))) { 
     ktsp_gene <- c()
@@ -36,10 +36,10 @@ if (!any(grepl("iso_ktsp", colnames(resgene)))) {
     ktsp_g %>% head
 
     resgene <- full_join(ktsp_g, resgene, by="feature_id")
-    restx <- full_join(ktsp_iso, restx, by="feature_id")
+    # restx <- full_join(ktsp_iso, restx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 ktsp_res = readLines(paste0(outdir, sprintf("/results/kal_isoktsp_output_%s_%s.txt", con1, con2)))
@@ -49,7 +49,7 @@ rm(restx)
 rm(ktsp_res)
 ktsp_res <- readLines(paste0(outdir, sprintf("/results/kal_isoktsp_output_%s_%s.txt", con1, con2)))
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("iso_ktsp", colnames(resgene)))) { 
     ktsp_gene <- c()
@@ -74,10 +74,10 @@ if (!any(grepl("iso_ktsp", colnames(resgene)))) {
 
 
     resgene <- full_join(ktsp_g, resgene, by="feature_id")
-    restx <- full_join(ktsp_iso, restx, by="feature_id")
+    # restx <- full_join(ktsp_iso, restx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
 
@@ -86,7 +86,7 @@ rm(restx)
 rm(ktsp_res)
 ktsp_res <- readLines(paste0(outdir, sprintf("/results/rsem_isoktsp_output_%s_%s.txt", con1, con2)))
 resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
-restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
+# restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("iso_ktsp", colnames(resgene)))) { 
     ktsp_gene <- c()
@@ -110,10 +110,10 @@ if (!any(grepl("iso_ktsp", colnames(resgene)))) {
     ktsp_iso <- data.frame(feature_id=ktsp_isoform, `iso_ktsp`=sapply(iso_score, function(x){1-x}))
     
     resgene <- full_join(ktsp_g, resgene, by="feature_id")
-    restx <- full_join(ktsp_iso, restx, by="feature_id")
+    # restx <- full_join(ktsp_iso, restx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    # write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 # pr_dtu <- data.frame()
 # gg_pr_dtu <- data.frame()
