@@ -74,3 +74,4 @@ paired_config.sh
 *.out
 *.csv
 *.jpeg
+*.gff.gz
