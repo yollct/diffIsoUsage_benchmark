@@ -2,13 +2,12 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --output=/nfs/scratch/chit/paired82.out
-#SBATCH --error=/nfs/scratch/chit/paired82.err
-#SBATCH --job-name=pair82
+#SBATCH --output=/nfs/scratch/chit/paired45.out
+#SBATCH --error=/nfs/scratch/chit/paired45err
+#SBATCH --job-name=pair4_0.5
 #SBATCH --mem-per-cpu=30G
 #SBATCH --time=4-00:00:00
 #SBATCH --partition=exbio-cpu
-
 
 #path="/nfs/home/students/chit/is_benchmark"
 
@@ -19,9 +18,26 @@
 #     bash main_script.sh -g 30000 -d ${dep} -f 4 -s 2 -r 4 -a /nfs/data/covid_hscell_4tp/ensembl_106/Homo_sapiens.GRCh38.cdna.all.fa.gz -o /localscratch/chit/is_sim_fc2
 # done;
 
+
+seq="pair"
+nsam="8"
+bg="0.7"
+reps="r1 r2 r3 r4 r5"
+
+# for seq in $seqtype; do
+#     for nsam in $nsample; do
+#         for bg in $background; do
+            for rep in $reps;
+                do
+                    bash main_script.sh --config /nfs/proj/is_benchmark/paired4_config.sh --name ${seq}_50_${nsam}_${rep}_${bg}
+                done;
+#         done;
+#     done;
+# done;
+
 # bash main_script.sh --config /nfs/data/Sys_CARE/sf_ameling_sys_care/sf_ameling_sys_car540_hgvnvdsx2_podocytes_nephrology/config.sh
 #bash main_script.sh --config /nfs/home/students/chit/is_benchmark/paired_config.sh
-bash main_script.sh --config /nfs/home/students/chit/is_benchmark/paired4_config.sh
+
 # source /nfs/home/students/chit/is_benchmark/paired_config.sh
 # if ! test -f ${index}/salmon_index;
 #   then mkdir -p ${index}/salmon_index || true

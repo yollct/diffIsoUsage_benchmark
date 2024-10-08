@@ -78,9 +78,9 @@ seq_label <- as_labeller(c('pair'="Paired-end", 'single'='Single-end', '2'='2', 
 alldf <- get_overall(split=NULL)
 overalldf1 <- alldf %>% dplyr::filter(sim==whichrep) 
 
-overalldfkal <- overalldf %>% dplyr::filter(sim==whichrep&quant_tool=="kal")
+overalldfkal <- overalldf1 %>% dplyr::filter(sim==whichrep&quant_tool=="sal")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
-png(sprintf("./noise_fig/depth_all_%s_%s_%s.png", "pair", whichrep, thisrep), width=900, height=600)
+png(sprintf("../noise_fig/depth_all_%s_%s_%s.png", "pair", whichrep, thisrep), width=900, height=600)
 ggplot(overalldf1, aes(x=recall, y=precision, color=tool, shape=depth))+
     geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
     theme_light()+
@@ -88,5 +88,5 @@ ggplot(overalldf1, aes(x=recall, y=precision, color=tool, shape=depth))+
    facet_grid(rep~quant_tool, labeller=seq_label)+
    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
-        labs(colors="Tools", shape="Invariance prob.")
+        labs(colors="Tools", shape="Depth (Million)")
 dev.off()

@@ -1,28 +1,53 @@
 #!/bin/bash
 
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --output=/nfs/scratch/chit/single852.out
-#SBATCH --error=/nfs/scratch/chit/single852.err
-#SBATCH --job-name=single825
-#SBATCH --mem-per-cpu=20G
-#SBATCH --partition=exbio-cpu
+#SBATCH --cpus-per-task=2
+#SBATCH --output=/nfs/scratch/chit/pairedcuff1.out
+#SBATCH --error=/nfs/scratch/chit/pairedcuff1.err
+#SBATCH --job-name=cuff1
+#SBATCH --mem-per-cpu=30G
 #SBATCH --time=4-00:00:00
+#SBATCH --partition=exbio-cpu
 
 #path="/nfs/home/students/chit/is_benchmark"
 
 # mkdir ${path}/results
-PATH=$PATH:/nfs/home/students/chit/RSEM-1.3.2/
 
 
 # for dep in 40; do
 #     bash main_script.sh -g 30000 -d ${dep} -f 4 -s 2 -r 4 -a /nfs/data/covid_hscell_4tp/ensembl_106/Homo_sapiens.GRCh38.cdna.all.fa.gz -o /localscratch/chit/is_sim_fc2
 # done;
-ulimit -n 100000
-# bash main_script.sh --config /nfs/data/Sys_CARE/sf_ameling_sys_care/sf_ameling_sys_car540_hgvnvdsx2_podocytes_nephrology/config.sh
-bash main_script.sh --config /nfs/home/students/chit/is_benchmark/single_config.sh
 
-#/nfs/home/students/chit/RSEM-1.3.2/rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64 /nfs/scratch/chit/simulated_real/single/fastq_sim/SRR12682098.fq /nfs/scratch/chit/ensembl_106/star_rsem/asim /nfs/scratch/chit/simulated_real/single//rsem_out/SRR12682098.fq/SRR12682098.fq
+
+seq="pair"
+nsam="4"
+bg="0.1"
+reps="r1 r2 r3 r4 r5"
+
+# for seq in $seqtype; do
+#     for nsam in $nsample; do
+#         for bg in $background; do
+            for rep in $reps;
+                do
+                    bash run_cufflinks.sh --config /nfs/scratch/chit/new_simulations/${seq}_50_${nsam}_${rep}_${bg}/config.sh --name ${seq}_50_${nsam}_${rep}_${bg}
+                done;
+#         done;
+#     done;
+# done;
+
+# bash main_script.sh --config /nfs/data/Sys_CARE/sf_ameling_sys_care/sf_ameling_sys_car540_hgvnvdsx2_podocytes_nephrology/config.sh
+#bash main_script.sh --config /nfs/home/students/chit/is_benchmark/paired_config.sh
+
+# source /nfs/home/students/chit/is_benchmark/paired_config.sh
+# if ! test -f ${index}/salmon_index;
+#   then mkdir -p ${index}/salmon_index || true
+#     echo "Building Salmon index"
+#     grep '^>' <(cat ${fasta}) | cut -d ' ' -f 1 > ${index}/decoys.txt
+#     sed -i.bak -e 's/>//g' ${index}/decoys.txt
+#     cat ${transcript_fasta} ${fasta} > ${index}/gentrome.fa.gz
+#     salmon index -t ${index}/gentrome.fa.gz -d ${index}/decoys.txt -p 12 -i ${index}/salmon_index 
+#   else echo "Reusing Salmon index"
+# fi 
 # PATH=$PATH:/nfs/home/students/chit/tophat-2.1.1.Linux_x86_64
 # PATH=$PATH:/nfs/home/students/chit/bowtie2-2.4.5-linux-x86_64
 #source /nfs/home/students/chit/is_benchmark/single_config.sh
@@ -43,4 +68,3 @@ bash main_script.sh --config /nfs/home/students/chit/is_benchmark/single_config.
 #             /nfs/data/covid_hscell_4tp/ensembl_106/star_index2.7.9/asim \
 #             /nfs/proj/is_benchmark/rsem_out/sample_01/sample_01
 
-#rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64 ${readfilesdir}/SRR12682098.fq ${index}/asim ${outputdir}/rsem_out/SRR12682098.fq/SRR12682098.fq§

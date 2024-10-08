@@ -4,6 +4,7 @@
 
 # User-specific files
 .Ruserdata
+.Rdata
 
 # Example code in package build process
 *-Ex.R
@@ -62,3 +63,14 @@ paired_config.sh
 *.tar.gz
 /runner/docker_rseqdiff/rseq-0.2.2-src
 /runner/docker_rseqdiff/rseq-0.2.2-src.zip
+*sim_data*
+*quant.sf
+*Rout
+*rds
+*.h5ad*
+*.gtf.gz
+*mtx
+*.err
+*.out
+*.csv
+*.jpeg

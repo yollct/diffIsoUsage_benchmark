@@ -9,7 +9,7 @@ source("/nfs/home/students/chit/is_benchmark/plot_functions/functions.R")
 
 path <- "/nfs/home/students/chit/is_benchmark"
 outdir <- "/nfs/scratch/chit/simulated_real/%s_50_%s_%s%s"
-noises <- c("", "_0.1", "_0.5")
+noises <- c("", "_0.1","_0.5")
 
 thisrep <- c('4','8')
 seqtype <- 'pair'
@@ -51,7 +51,8 @@ get_overall <- function(split){
                         df_g <- read.csv(paste0(sprintf(outdir, seq,rep, R, noise), "/results/", sprintf("%s_res_gene_N_T.txt", quant)), sep="\t")
                         thisthres <- thresholds[colnames(df_g)[2:ncol(df_g)],]$thres
                         df_g <- df_g %>% group_by(feature_id) %>% summarise(across(colnames(select(df_g, -feature_id)), .fns = min), .groups = "keep")
-                        
+
+                        df_g <- df_g[grepl("ENSG", df_g$feature_id),]
 
                         outputpr <- cal_pre_re(df_g, truthfiles_g, split=split)
                         
@@ -60,6 +61,7 @@ get_overall <- function(split){
                         this_pr$rep <- paste(as.character(rep), 'replicates')
                         this_pr$seq <- seq
                         this_pr$sim <- R
+                        this_pr$con <- paste0(quant, "_", paste(as.character(rep), 'replicates'))
                         this_pr$noise <- ifelse(noise=="", 0, ifelse(noise=="_0.1", 0.1, 0.5))
                         rm(df_g)
                         this_pr
@@ -72,56 +74,71 @@ get_overall <- function(split){
     overalldf
 }
 
-seq_label <- as_labeller(c('pair'="Paired-end", 'single'='Single-end', '2'='2', '3'='3','4'='4','5'='5', '2-4'='2-4','5-9'='5-9','>9'='>9','DTE'='DTE','DTU'='DTU','IS'='IS','0-0.1'='0-0.1', '0.1-0.2'='0.1-0.2','0.3-0.4'='0.3-0.4', '0.4-0.5'='0.4-0.5', '0.5-0.6'='0.5-0.6', '0.6-0.8'='0.6-0.8', '>0.8'='>0.8', '8 replicates'='8 replicates', '4 replicates'='4 replicates', '0'='0','0.5'='0.5', '0.1'='0.1', "kal" = "Kallisto", "rsem" = "RSEM","salmon" = "Salmon"))
+seq_label <- as_labeller(c('pair'="Paired-end", 'single'='Single-end', '2'='2', '3'='3','4'='4','5'='5', '2-4'='2-4','5-9'='5-9','>9'='>9','DTE'='S1','DTU'='S2','IS'='S3','0-0.1'='0-0.1', '0.1-0.2'='0.1-0.2','0.3-0.4'='0.3-0.4', '0.4-0.5'='0.4-0.5', '0.5-0.6'='0.5-0.6', '0.6-0.8'='0.6-0.8', '>0.8'='>0.8', '8 replicates'='8 replicates', '4 replicates'='4 replicates', '0'='0','0.5'='0.5', '0.1'='0.1', "kal" = "Kallisto", "rsem" = "RSEM","salmon" = "Salmon", 'kal_8 replicates'='Kallisto: 8 replicates', 'kal_4 replicates'='Kallisto: 4 replicates', 'rsem_8 replicates'='RSEM: 8 replicates', 'rsem_4 replicates'='RSEM: 4 replicates', 'salmon_8 replicates'='Salmon: 8 replicates', 'salmon_4 replicates'='Salmon: 4 replicates'))
 
 alldf <- get_overall(split=NULL)
-overalldf %>% head
+
 overalldf1 <- alldf %>% dplyr::filter(sim==whichrep&seq==seqtype) 
 
 f1score <- overalldf1 %>% dplyr::filter(rep=="8 replicates"&noise==0.5)
 write.table(f1score, "/nfs/scratch/chit/GSE222260/analysis/f1scores.csv", sep="\t")
 
-png(sprintf("./noise_fig/alltools_re_%s_%s_%s.png", seqtype, whichrep, thisrep), width=1000, height=600)
-ggplot(overalldf1, aes(x=noise, y=recall, color=tool))+
-    geom_point(size=7, alpha=0.8)+geom_path()+
-    scale_color_manual(values=colMap)+
-  facet_grid(rep~quant_tool, labeller=seq_label)+
-    theme(axis.text=element_text(size=16), axis.text.x = element_text(vjust = 0, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Recall")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")+theme_light()
+# png(sprintf("./noise_fig/alltools_re_%s_%s_%s.png", seqtype, whichrep, thisrep), width=1000, height=600)
+# ggplot(overalldf1, aes(x=noise, y=recall, color=tool))+
+#     geom_point(size=7, alpha=0.8)+geom_path()+
+#     scale_color_manual(values=colMap)+
+#   facet_grid(rep~quant_tool, labeller=seq_label)+
+#     theme(axis.text=element_text(size=16), axis.text.x = element_text(vjust = 0, hjust = 1), axis.title = element_text(size=20),
+#         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+#     xlab("Noise level")+
+#     ylab("Recall")+
+#     scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
+#                               "salmon" = "Salmon"))+
+#     labs(color="Tools", shape="Quantification tools")+theme_light()
+# dev.off()
+
+# png(sprintf("./noise_fig/alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=1000, height=600)
+# ggplot(overalldf1, aes(x=noise, y=precision, color=tool))+
+#     geom_point(size=7, alpha=0.8)+geom_path()+
+#     scale_color_manual(values=colMap)+
+#   facet_grid(rep~quant_tool, labeller=seq_label)+
+#     theme(axis.text=element_text(size=16), axis.text.x = element_text(vjust = 0, hjust = 1), axis.title = element_text(size=20),
+#         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+#     xlab("Noise level")+
+#     ylab("Precision")+
+#     labs(color="Tools", shape="Quantification tools")+theme_light()
+# dev.off()
+
+jpeg(sprintf("./noise_fig/alltools_allf1_%s_%s_%s.jpeg", seqtype, whichrep, thisrep), res=300, width=3000, height=2000)
+overalldf1 %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(rep~quant_tool, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ylab("F1 score")+xlab("Tool")
+
 dev.off()
 
-png(sprintf("./noise_fig/alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=1000, height=600)
-ggplot(overalldf1, aes(x=noise, y=precision, color=tool))+
-    geom_point(size=7, alpha=0.8)+geom_path()+
-    scale_color_manual(values=colMap)+
-  facet_grid(rep~quant_tool, labeller=seq_label)+
-    theme(axis.text=element_text(size=16), axis.text.x = element_text(vjust = 0, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Precision")+
-    labs(color="Tools", shape="Quantification tools")+theme_light()
-dev.off()
-
-png(sprintf("./noise_fig/alltools_f1_%s_%s_%s.png", seqtype, whichrep, thisrep), width=1000, height=600)
+jpeg(sprintf("./noise_fig/alltools_f1_%s_%s_%s.jpeg", seqtype, whichrep, thisrep), width=4000, height=2000)
 ggplot(overalldf1, aes(x=noise, y=f1, color=tool))+
     geom_point(size=7, alpha=0.8)+geom_path()+
     scale_color_manual(values=colMap)+
   facet_grid(rep~quant_tool, labeller=seq_label)+
     theme(axis.text=element_text(size=16), axis.text.x = element_text(vjust = 0, hjust = 1), axis.title = element_text(size=20),
         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
+    xlab("Background")+
     ylab("Precision")+
     labs(color="Tools", shape="Quantification tools")+theme_light()
 dev.off()
 
-overalldfkal <- overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
+overalldfkal <- overalldf1 %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
-png(sprintf("./noise_fig/alltools_all_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
+jpeg(sprintf("./noise_fig/alltools_all_%s_%s_%s.jpeg", seqtype, whichrep, thisrep), res=300, width=4000, height=2000)
 ggplot(overalldf1, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
     geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
     theme_light()+
@@ -129,12 +146,12 @@ ggplot(overalldf1, aes(x=recall, y=precision, color=tool, shape=as.character(noi
    facet_grid(rep~quant_tool, labeller=seq_label)+
    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
-        labs(colors="Tools", shape="Invariance prob.")
+        labs(colors="Tools", shape="Background")
 dev.off()
 
 overalldfsal <- alldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="salmon")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
-png(sprintf("./noise_fig/alltools_sal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=500, height=600)
+jpeg(sprintf("./noise_fig/alltools_sal_%s_%s_%s.jpeg", seqtype, whichrep, thisrep), res=300, width=4000, height=2000)
 ggplot(overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
     geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
     theme_light()+
@@ -142,115 +159,205 @@ ggplot(overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.character(n
    facet_grid(rep~., labeller=seq_label)+
    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
-        labs(color="Tools", shape="Noise")
+        labs(color="Tools", shape="Background")
 dev.off()
+
+png(sprintf("./noise_fig/alltools_%s_%s_%s_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+ggplot(overalldf1, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~., labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")
+dev.off()
+
 
 fc_overalldf <- get_overall(split="fc_group")
 fc_overalldf1 <- fc_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype)
 write.table(fc_overalldf, "./fc_overalldf_pair.csv", sep="\t", row.names=F)
 
-png(sprintf("./noise_fig/fc_re_alltools_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(fc_overalldf1, aes(x=splits, y=recall, color=tool, shape=quant_tool, alpha=rep))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ 
-   scale_color_manual(values=colMap)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Recall")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")+theme_light()
+#radar plot
+
+
+plot_list <- c()
+plot_name <- c()
+n<-1
+for (rps in c("4 replicates", "8 replicates")){
+    for (spl in sort(unique(fc_overalldf1$splits))){
+        data <- fc_overalldf1 %>% filter(quant_tool=="salmon"&splits==spl&rep==rps) %>% select(noise, f1, tool) %>% pivot_wider(names_from = tool, values_from = f1, id_cols = noise) %>% as.data.frame()
+        row.names(data) <- paste0("bg-",data$noise)
+        data <- rbind(rep(0.6,ncol(data)) , rep(0,ncol(data)) , data)
+        data <- data %>% select(-noise)
+
+        plot_list[[n]] <- data
+        plot_name[[n]] <- paste0(rps,"_",spl)
+        n<-n+1
+ }
+}
+
+colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
+colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+
+png(sprintf("./noise_fig/fc_allradar_%s_%s_%s.png", seqtype, whichrep, thisrep), width=4500, height=2000, res=300)
+nrows<-2
+ncols<-4
+par(mfrow = c(nrows, ncols), mar = c(0.5,0.5,0.5,0.5), oma=c(4,4,4,4)) # 4 rows, 2 columns
+
+for (i in seq_along(plot_list)) {
+radarchart(plot_list[[i]], axistype=1 , 
+        #custom polygon
+        pcol=colors_border ,  plwd=4 , plty=1,
+        #custom the grid
+        cglcol="grey", cglty=1, axislabcol="#5E5E5E", caxislabels=seq(0,0.6,0.15), cglwd=0.8,
+        #custom labels
+        vlcex=1.5, calcex=1
+        
+)  
+}
+row_labels <- c("4 replicates", "8 replicates") # Adjust as needed
+for (i in 1:nrows) {
+  mtext(row_labels[i], side = 2, at = (nrows - i + 0.5)/nrows, srt=90, outer = TRUE, line = 1, cex=1.8)
+}
+
+# Add column labels
+col_labels <- sort(unique(fc_overalldf1$splits))   # Adjust as needed
+for (i in 1:ncols) {
+  mtext(col_labels[i], side = 3, at = (i - 0.5)/ncols, las = 1, outer = TRUE, line = 1, cex=1.8)
+}
+
+# 
 dev.off()
 
-png(sprintf("./noise_fig/fc_alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(fc_overalldf1, aes(x=noise, y=precision, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Precision")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")+theme_light()
+png("./noise_fig/radar_legend.png", width = 2000, height = 2000, res=300)
+plot(1, type = "n", axes = FALSE, xlab = "", ylab = "", xlim = c(0, 1), ylim = c(0, 1))
+legend(x=0.5, y=0.5, legend = c("0","0.1","0.5"), title="Background", bty = "n", pch=20 , col=colors_border , text.col = "#494949", cex=2, pt.cex=4)
 dev.off()
 
 fc_overalldfkal <- fc_overalldf1 <- fc_overalldf %>% dplyr::filter(quant_tool=="kal")
 png(sprintf("./noise_fig/fc_alltools_0.5_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(fc_overalldfkal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
+ggplot(fc_overalldfkal, aes(x=recall, y=precision, shape=as.character(noise)))+
     geom_point(size=7, alpha=0.8)+theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
     xlab("Noise level")+
     ylab("Precision")+
     scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
                               "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")+theme_light()
+    labs(color="Tools", shape="Quantification tools", shape="Background")+theme_light()
 dev.off()
 
-fc_overalldfkal <- fc_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
+fc_overalldfkal <- fc_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal") %>% as.data.frame
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
 png(sprintf("./noise_fig/fc_alltools_kal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(fc_overalldfkal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
-    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+fc_overalldfkal %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
 dev.off()
 
 fc_overalldfsal <- fc_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="salmon")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
 png(sprintf("./noise_fig/fc_alltools_sal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(fc_overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
-    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+fc_overalldfsal %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   ylim(c(0,0.6))+
+   theme(axis.text=element_text(size=16), axis.text.x = element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background.")
+dev.off()
+
+png(sprintf("./noise_fig/fc_alltools_%s_%s_%s_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+fc_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("F1 score in different event scenarios in paired-end data")
+dev.off()
+
+png(sprintf("./noise_fig/fc_alltools_%s_%s_%s_re_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+fc_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=recall, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=recall, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("Recall in different event scenarios in paired-end data")
+dev.off()
+
+
+png(sprintf("./noise_fig/fc_alltools_%s_%s_%s_pr_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+fc_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=precision, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=precision, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("Precision in different fold change in paired-end data")
 dev.off()
 
 ir_overalldf <- get_overall(split="diffiso")
 ir_overalldf1 <- ir_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&splits!='0.6-0.8'&splits!='>0.8')
 
 
-png(sprintf("./noise_fig/diffiso_re_alltools_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(ir_overalldf1, aes(x=noise, y=recall, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Recall")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
-dev.off()
+# png(sprintf("./noise_fig/diffiso_re_alltools_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
+# ggplot(ir_overalldf1, aes(x=noise, y=recall, color=tool, shape=quant_tool))+
+#     geom_path()+
+#     geom_point(size=7, alpha=0.8)+ theme_light()+
+#    scale_color_manual(values=colMap)+
+#    facet_grid(rep~splits, labeller=seq_label)+
+#    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+#         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+#     xlab("Noise level")+
+#     ylab("Recall")+
+#     scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
+#                               "salmon" = "Salmon"))+
+#     labs(color="Tools", shape="Quantification tools")
+# dev.off()
 
 
-png(sprintf("./noise_fig/ir_alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(ir_overalldf1, aes(x=noise, y=precision, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Precision")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
-dev.off()
+# png(sprintf("./noise_fig/ir_alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
+# ggplot(ir_overalldf1, aes(x=noise, y=precision, color=tool, shape=quant_tool))+
+#     geom_path()+
+#     geom_point(size=7, alpha=0.8)+ theme_light()+
+#    scale_color_manual(values=colMap)+
+#    facet_grid(rep~splits, labeller=seq_label)+
+#    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+#         strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+#     xlab("Noise level")+
+#     ylab("Precision")+
+#     scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
+#                               "salmon" = "Salmon"))+
+#     labs(color="Tools", shape="Quantification tools")
+# dev.off()
 
 ir_overalldfkal <- ir_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
@@ -261,7 +368,8 @@ ggplot(ir_overalldfkal, aes(x=recall, y=precision, color=tool, shape=as.characte
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
 dev.off()
 
 ir_overalldfsal <- ir_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="salmon")
@@ -273,41 +381,75 @@ ggplot(ir_overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.characte
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
    theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
+dev.off()
+
+png(sprintf("./noise_fig/ir_alltools_%s_%s_%s_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+ggplot(ir_overalldf, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")
 dev.off()
 
 iso_overalldf <- get_overall(split="diffiso_group")
 iso_overalldf1 <- iso_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype)
 
-png(sprintf("./noise_fig/diffisogroup_re_alltools_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(iso_overalldf1, aes(x=noise, y=recall, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Recall")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
-dev.off()
+#radar plot
+library(fmsb)
+library(gridExtra)
 
+plot_list <- c()
+plot_name <- c()
+n<-1
+for (rps in c("4 replicates", "8 replicates")){
+    for (spl in sort(unique(iso_overalldf1$splits))){
+        data <- iso_overalldf1 %>% filter(quant_tool=="salmon"&splits==spl&rep==rps) %>% select(noise, f1, tool) %>% pivot_wider(names_from = tool, values_from = f1, id_cols = noise) %>% as.data.frame()
+        row.names(data) <- paste0("bg-",data$noise)
+        data <- rbind(rep(0.5,ncol(data)) , rep(0,ncol(data)) , data)
+        data <- data %>% select(-noise)
 
-png(sprintf("./noise_fig/diffisogroup_alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(iso_overalldf1, aes(x=noise, y=precision, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Precision")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
+        plot_list[[n]] <- data
+        plot_name[[n]] <- paste0(rps,"_",spl)
+        n<-n+1
+ }
+}
+
+colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
+colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+
+png(sprintf("./noise_fig/iso_allradar_%s_%s_%s.png", seqtype, whichrep, thisrep), width=4000, height=2000, res=300)
+nrows<-2
+ncols<-4
+par(mfrow = c(nrows, ncols), mar = c(0.5,0.5,0.5,0.5), oma=c(4,4,4,4)) # 4 rows, 2 columns
+
+for (i in seq_along(plot_list)) {
+radarchart(plot_list[[i]], axistype=1 , 
+        #custom polygon
+        pcol=colors_border ,  plwd=4 , plty=1,
+        #custom the grid
+        cglcol="grey", cglty=1, axislabcol="#5E5E5E", caxislabels=seq(0,0.5,0.1), cglwd=0.8,
+        #custom labels
+        vlcex=1.5, calcex=1.0
+        
+)  
+}
+row_labels <- c("4 replicates", "8 replicates") # Adjust as needed
+for (i in 1:nrows) {
+  mtext(row_labels[i], side = 2, at = (nrows - i + 0.5)/nrows, srt=90, outer = TRUE, line = 1, cex=1.8)
+}
+
+# Add column labels
+col_labels <- sort(unique(iso_overalldf1$splits))   # Adjust as needed
+for (i in 1:ncols) {
+  mtext(col_labels[i], side = 3, at = (i - 0.5)/ncols, las = 1, outer = TRUE, line = 1, cex=1.8)
+}
+
+# legend(x=1, y=1.4, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=colors_border , text.col = "#494949", cex=2, pt.cex=4)
 dev.off()
 
 iso_overalldfkal <- iso_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
@@ -318,8 +460,9 @@ ggplot(iso_overalldfkal, aes(x=recall, y=precision, color=tool, shape=as.charact
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=90, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
 dev.off()
 
 iso_overalldfsal <- iso_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="salmon")
@@ -330,129 +473,266 @@ ggplot(iso_overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.charact
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=90, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
+dev.off()
+
+png(sprintf("./noise_fig/iso_alltools_%s_%s_%s_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+ggplot(iso_overalldf, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=90, vjust = 1, hjust = 1), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")
 dev.off()
 
 ev_overalldf <- get_overall(split="events")
 ev_overalldf1 <- ev_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype)
 
-png(sprintf("./noise_fig/ev_re_alltools_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(ev_overalldf1, aes(x=noise, y=recall, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Recall")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
-dev.off()
+#radar plot
+library(fmsb)
+library(gridExtra)
 
+plot_list <- c()
+plot_name <- c()
+n<-1
+for (rps in c("4 replicates", "8 replicates")){
+    for (spl in sort(unique(ev_overalldf1$splits))){
+        data <- ev_overalldf1 %>% filter(quant_tool=="salmon"&splits==spl&rep==rps) %>% select(noise, f1, tool) %>% pivot_wider(names_from = tool, values_from = f1, id_cols = noise) %>% as.data.frame()
+        row.names(data) <- paste0("bg-",data$noise)
+        data <- rbind(rep(0.6,ncol(data)) , rep(0,ncol(data)) , data)
+        data <- data %>% select(-noise)
 
-png(sprintf("./noise_fig/ev_alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(ev_overalldf1, aes(x=noise, y=precision, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Precision")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
-dev.off()
+        plot_list[[n]] <- data
+        plot_name[[n]] <- paste0(rps,"_",spl)
+        n<-n+1
+ }
+}
 
-ev_overalldfkal <- ev_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
-# dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
-png(sprintf("./noise_fig/ev_alltools_kal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(ev_overalldfkal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
-    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
-    theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
+colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+
+png(sprintf("./noise_fig/ev_allradar_%s_%s_%s.png", seqtype, whichrep, thisrep),  width=3500, height=2000, res=300)
+nrows<-2
+ncols<-3
+par(mfrow = c(nrows, ncols), mar = c(0.5,0.5,0.5,0.5), oma=c(4,4,4,4))  # 4 rows, 2 columns
+ # 4 rows, 2 columns
+
+for (i in seq_along(plot_list)) {
+radarchart(plot_list[[i]], axistype=1 , 
+        #custom polygon
+        pcol=colors_border ,  plwd=4 , plty=1,
+        #custom the grid
+        cglcol="grey", cglty=1, axislabcol="#5E5E5E", caxislabels=seq(0,0.6,0.15), cglwd=0.8,
+        #custom labels
+        vlcex=1.5, calcex=1
+        
+)  
+}
+row_labels <- c("4 replicates", "8 replicates") # Adjust as needed
+for (i in 1:nrows) {
+  mtext(row_labels[i], side = 2, at = (nrows - i + 0.5)/nrows, srt=90, outer = TRUE, line = 1, cex=1.8)
+}
+
+# Add column labels
+col_labels <- c("S1", "S2", "S3")   # Adjust as needed
+for (i in 1:ncols) {
+  mtext(col_labels[i], side = 3, at = (i - 0.5)/ncols, las = 1, outer = TRUE, line = 1, cex=1.8)
+}
+
+# legend(x=1, y=1.4, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=colors_border , text.col = "#494949", cex=2, pt.cex=4)
 dev.off()
 
 ev_overalldfsal <- ev_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="salmon")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
 png(sprintf("./noise_fig/ev_alltools_sal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(ev_overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
-    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+ev_overalldfsal %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>% 
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
 dev.off()
+
+png(sprintf("./noise_fig/ev_alltools_%s_%s_%s_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+ev_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("F1 scores in different event scenarios in paired-end data")
+dev.off()
+
+png(sprintf("./noise_fig/ev_alltools_%s_%s_%s_re_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+ev_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=recall, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=recall, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("Recall in different event scenarios in paired-end data")
+dev.off()
+
+png(sprintf("./noise_fig/ev_alltools_%s_%s_%s_pr_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+ev_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>%
+ggplot(aes(x=tool, y=precision, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=precision, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("Precision in different event scenarios in paired-end data")
+dev.off()
+
 
 gg_overalldf <- get_overall(split="gene_group")
 gg_overalldf1 <- gg_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype)
 
-png(sprintf("./noise_fig/genegroup_re_alltools_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(gg_overalldf1, aes(x=noise, y=recall, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Recall")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
-dev.off()
+#radar plot
+library(fmsb)
+library(gridExtra)
 
+plot_list <- c()
+plot_name <- c()
+n<-1
+for (rps in c("4 replicates", "8 replicates")){
+    for (spl in sort(unique(gg_overalldf1$splits))){
+        data <- gg_overalldf1 %>% filter(quant_tool=="salmon"&splits==spl&rep==rps) %>% select(noise, f1, tool) %>% pivot_wider(names_from = tool, values_from = f1, id_cols = noise) %>% as.data.frame()
+        row.names(data) <- paste0("bg-",data$noise)
+        data <- rbind(rep(0.6,ncol(data)) , rep(0,ncol(data)) , data)
+        data <- data %>% select(-noise)
 
-png(sprintf("./noise_fig/genegroup_alltools_pr_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(gg_overalldf1, aes(x=noise, y=precision, color=tool, shape=quant_tool))+
-    geom_path()+
-    geom_point(size=7, alpha=0.8)+ theme_light()+
-   scale_color_manual(values=colMap)+
-   facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
-    xlab("Noise level")+
-    ylab("Precision")+
-    scale_shape_discrete(labels=c("kal" = "Kallisto", "rsem" = "RSEM",
-                              "salmon" = "Salmon"))+
-    labs(color="Tools", shape="Quantification tools")
+        plot_list[[n]] <- data
+        plot_name[[n]] <- paste0(rps,"_",spl)
+        n<-n+1
+ }
+}
+
+colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
+colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
+
+png(sprintf("./noise_fig/gg_allradar_%s_%s_%s.png", seqtype, whichrep, thisrep), width=3500, height=2000, res=300)
+nrows<-2
+ncols<-3
+par(mfrow = c(nrows, ncols), mar = c(0.5,0.5,0.5,0.5), oma=c(4,4,4,4))  # 4 rows, 2 columns
+
+for (i in seq_along(plot_list)) {
+    radarchart(plot_list[[i]], axistype=1 , 
+        #custom polygon
+        pcol=colors_border ,  plwd=4 , plty=1,
+        #custom the grid
+        cglcol="grey", cglty=1, axislabcol="#5E5E5E", caxislabels=seq(0,0.6,0.15), cglwd=0.8,
+        #custom labels
+        vlcex=1.5, calcex=1
+        
+    )  
+}
+row_labels <- c("4 replicates", "8 replicates") # Adjust as needed
+for (i in 1:nrows) {
+  mtext(row_labels[i], side = 2, at = (nrows - i + 0.5)/nrows, srt=90, outer = TRUE, line = 1, cex=1.8)
+}
+
+# Add column labels
+col_labels <- sort(unique(gg_overalldf1$splits))   # Adjust as needed
+for (i in 1:ncols) {
+  mtext(col_labels[i], side = 3, at = (i - 0.5)/ncols, las = 1, outer = TRUE, line = 1, cex=1.8)
+}
+
+#legend(x=1, y=1.4, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=colors_border , text.col = "#494949", cex=2, pt.cex=4)
 dev.off()
 
 
 gg_overalldfkal <- gg_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="kal")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
 png(sprintf("./noise_fig/genegroup_alltools_kal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(gg_overalldfkal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
-    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+gg_overalldfkal %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>% 
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
 dev.off()
 
 gg_overalldfsal <- gg_overalldf %>% dplyr::filter(sim==whichrep&seq==seqtype&quant_tool=="salmon")
 # dex <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/kal_res_gene_N_T.txt", sep="\t")
 png(sprintf("./noise_fig/genegroup_alltools_sal_%s_%s_%s.png", seqtype, whichrep, thisrep), width=900, height=600)
-ggplot(gg_overalldfsal, aes(x=recall, y=precision, color=tool, shape=as.character(noise)))+
-    geom_point(size=5, alpha=0.8)+geom_path(aes(x=recall, y=precision, group=tool))+
+gg_overalldfsal %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>% 
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
     theme_light()+
    scale_color_manual(values=colMap)+
    facet_grid(rep~splits, labeller=seq_label)+
-   theme(axis.text=element_text(size=20), axis.text.x = element_text(angle=45, vjust = 1, hjust = 1), axis.title = element_text(size=20),
-        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15))+
+        labs(color="Tools", shape="Background")
 dev.off()
 
 
+png(sprintf("./noise_fig/gg_alltools_%s_%s_%s_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+gg_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>% 
+ggplot(aes(x=tool, y=f1, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=f1, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background.")+
+        ggtitle("F1 scores in different gene group in paired-end data")
+dev.off()
 
+png(sprintf("./noise_fig/gg_alltools_%s_%s_%s_re_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+gg_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>% 
+ggplot(aes(x=tool, y=recall, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=recall, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("Recall in different gene group in paired-end data")
+dev.off()
+
+png(sprintf("./noise_fig/gg_alltools_%s_%s_%s_pr_supp.png", seqtype, whichrep, thisrep), width=800, height=1200)
+gg_overalldf %>%
+    mutate(tool=fct_reorder(tool, desc(f1))) %>% 
+ggplot(aes(x=tool, y=precision, color=tool, shape=as.character(noise)))+
+    geom_point(size=5, alpha=0.8)+geom_path(aes(x=tool, y=precision, group=tool))+
+    theme_light()+
+   scale_color_manual(values=colMap)+
+   facet_grid(con~splits, labeller=seq_label)+
+   theme(axis.text=element_text(size=20), axis.text.x =  element_blank(), axis.title = element_text(size=20),
+        strip.text=element_text(size=20), legend.text=element_text(size=15), legend.title=element_text(size=15)) +
+        labs(color="Tools", shape="Background")+
+        ggtitle("Precision in different gene group in paired-end data")
+dev.off()
 # tru <- tru %>% dplyr::filter(fc_group==4)
 # p_g <- tru$feature_id[tru$status==1]
 # dex1 <- dex %>% dplyr::mutate(dexseq=replace_na(dexseq, 1))
@@ -462,36 +742,43 @@ dev.off()
 
 # sal <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r1/results/rsem_count.csv")
 # sum(is.na(dex$feature_id))
-tru <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r2_0.1/results/truthtable_gene.csv", sep="\t")
+View(as.data.frame(fc_overalldf)) 
+tru <- read.csv("/nfs/scratch/chit/simulated_real/pair_50_8_r1_0.5/results/truthtable_gene.csv", sep="\t")
 
-diffiso <- read.csv("/nfs/scratch/chit/simulated_real/pair_50_4_r1/results/isoinfo.csv", sep="\t")
+diffiso <- read.csv("/nfs/scratch/chit/simulated_real/pair_50_8_r1_0.5/results/isoinfo.csv", sep="\t")
 isorat <- diffiso %>% group_by(gene_id) %>% summarise(diffiso=max(diffiso))
 tru$diffiso <- isorat$diffiso
 tru <- tru %>% dplyr::mutate(diffiso=ifelse(diffiso>0.8, ">0.8", ifelse(diffiso>=0.6, "0.6-0.8", ifelse(diffiso>=0.5, "0.5-0.6", ifelse(diffiso>=0.4, "0.4-0.5", ifelse(diffiso>=0.3, "0.3-0.4", ifelse(diffiso>=0.2, "0.2-0.3", ifelse(diffiso>=0.1, "0.1-0.2", "0-0.1")))))))) 
-tru <- tru %>% dplyr::filter(fc_group!="1")
+
+
 png("./noise_fig/tru_stat.png")
 ggplot(tru, aes(x=diffiso))+
     geom_bar()+
     facet_grid(gene_group~fc_group)
 dev.off()
 # sum(d_g %in% p_g)/length(p_g)
-sal <- read.csv("/nfs/scratch/chit/simulated_real/single_50_8_r2_0.1/results/salmon_res_gene_N_T.txt", sep="\t")
+sal <- read.csv("/nfs/scratch/chit/simulated_real/pair_50_8_r1_0.5/results/salmon_res_gene_N_T.txt", sep="\t")
 
-sal$drimseq[is.na(sal$drimseq)] <- 1
-namet <- sal$feature_id[sal$drimseq<0.05]
-nrow(sal)
-fctru <- tru %>% filter(events=="IS")
-fctru %>% head
-fctru %>% nrow
+sal <- sal[grepl("ENSG", sal$feature_id),]
 
-#not_tru <- tru %>% filter(fc_group!="3") 
 
+fc_t <- tru %>% dplyr::filter(events=="none")
+fcsplitted <- sal %>% filter(feature_id %in% fc_t$feature_id)
+fcval <- lapply(fcsplitted$iso_ktsp, function(x){ifelse(is.na(x), 0, x)}) %>% unlist
+sum(fcval > 0.5)
+
+gg_t <- tru %>% dplyr::filter(gene_group == ">9") #%>% filter(status==1)
+ggsplitted <- sal %>% filter(feature_id %in% gg_t$feature_id)
+ggval <- lapply(ggsplitted$iso_ktsp, function(x){ifelse(is.na(x), 0, x)}) %>% unlist
+sum(ggval > 0.5)
+
+tru %>% filter(fc_group==1)
 fil1 <- sal[sal$feature_id %in% tru$feature_id,]
 
 detectedpos <- fil1$feature_id[fil1$drimseq <0.05]
 boomet <- unique(detectedpos)
 tru <- tru %>% dplyr::mutate(status=ifelse(events=="DTE", 0, status))
-
+ 
 split_tru <- tru %>% filter(status==1)
 split_tru %>% nrow
 detectedpos[detectedpos %in% split_tru$feature_id] 
@@ -499,3 +786,16 @@ detectedpos[detectedpos %in% split_tru$feature_id]
 tru %>% head
 
 fc_overalldf %>% filter(tool=="nbsplice" & quant_tool=="salmon")
+
+
+nrow(tru %>% dplyr::filter(fc_group=="2"&status==1))+
+    nrow(tru %>% dplyr::filter(fc_group=="3"&status==1))+
+    nrow(tru %>% dplyr::filter(fc_group=="4"&status==1))+
+    length(tru %>% dplyr::filter(fc_group=="5"&status==1))
+
+
+3975+4118+3877+4042
+
+nrow(tru %>% dplyr::filter(gene_group=="2-4"&status==1))+
+    nrow(tru %>% dplyr::filter(gene_group=="5-9"&status==1))+
+    nrow(tru %>% dplyr::filter(gene_group==">9"&status==1))

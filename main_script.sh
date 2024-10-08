@@ -1,14 +1,14 @@
 #!/bin/bash
 
-PATH=$PATH:/nfs/home/students/chit/miniconda3
-PATH=$PATH:/nfs/home/students/chit/cufflinks-2.2.1.Linux_x86_64
-PATH=$PATH:/nfs/home/students/chit/samtools-1.13
-PATH=$PATH:/nfs/home/students/chit/RSEM-1.3.2/
-PATH=$PATH:/nfs/home/students/chit/tophat-2.1.1.Linux_x86_64
-PATH=$PATH:/nfs/home/students/chit/bowtie2-2.4.5-linux-x86_64
-PATH=$PATH:/nfs/home/students/chit/STAR-2.7.9a/bin/Linux_x86_64
-PATH=$PATH:/nfs/home/students/chit/DSGseq/DSG-0.1.0/SeqExpress
-PATH=$PATH:/nfs/home/students/chit/bedtools2/bin
+PATH=$PATH:/opt/anaconda3/bin/
+PATH=$PATH:/nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64
+PATH=$PATH:/nfs/scratch/chit/samtools-1.13
+PATH=$PATH:/nfs/scratch/chit/RSEM-1.3.2/
+PATH=$PATH:/nfs/scratch/chit/tophat-2.1.1.Linux_x86_64
+PATH=$PATH:/nfs/scratch/chit/bowtie2-2.4.5-linux-x86_64
+PATH=$PATH:/nfs/scratch/chit/STAR-2.7.9a/bin/Linux_x86_64
+PATH=$PATH:/nfs/scratch/chit/DSGseq/DSG-0.1.0/SeqExpress
+PATH=$PATH:/nfs/scratch/chit/bedtools2/bin
 #PATH=$PATH:/nfs/home/students/chit/.conda/envs/nease/pkgs/r-base-3.6.1-haffb61f_2/bin
 
 set -euo pipefail
@@ -18,6 +18,7 @@ for arg in "$@"; do
   case "$arg" in
     "--help") set -- "$@" "-h" ;;
     "--config") set -- "$@" "-c" ;;
+    "--name") set -- "$@" "-n" ;;
 
     *)        set -- "$@" "$arg"
   esac
@@ -38,15 +39,17 @@ exit_abnormal() {                         # Function: Exit with error.
 }
 
       ######## simulation ########
-while getopts h:c: flag;
+while getopts h:c:n: flag;
   do
     case "${flag}" in
       h) usage; exit 0;;
       c) config=${OPTARG};;
+      n) name=${OPTARG};;
   esac
 done
 
 echo "$config"
+echo $name
 source ${config}
 shopt -s extglob
 
@@ -89,7 +92,7 @@ fi
 
 if ! test -s ${index}/JunctionSeq.flat.gff.gz;
   then
-  java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar makeFlatGff \
+  java -jar /nfs/scratch/chit/hartleys-QoRTs-099881f/QoRTs.jar makeFlatGff \
     --stranded \
     ${gtf} \
     ${index}/JunctionSeq.flat.gff.gz
@@ -113,7 +116,7 @@ fi
 if ! test -f ${index}/genomeParameters.txt
 	then mkdir -p ${index} || true # to allow mkdir to fail gracefully, we add "|| true"
 		echo "Indexing reference genome with STAR"
-		/nfs/home/students/chit/STAR-2.7.9a/bin/Linux_x86_64/STAR \
+		/nfs/scratch/chit/STAR-2.7.9a/bin/Linux_x86_64/STAR \
 		--runMode genomeGenerate \
 		--genomeDir ${index} \
 		--genomeFastaFiles $fasta \
@@ -209,10 +212,12 @@ done
 # fi
 
 STAR --version
-# ACTIVATE ANACONDA
-eval "$(conda shell.bash hook)"
-conda activate nease
-echo "conda activated"
+which conda
+# # ACTIVATE ANACONDA
+# eval "$(/nfs/home/students/chit/miniconda3/bin/conda shell.bash hook)"
+
+# conda activate /nfs/scratch/chit/.conda/env/r-env
+# echo "conda activated"
 
 # chrs='1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22'
 # for thistmp in $(find ${outputdir}/alignments/ | grep "Aligned.sortedByCoord.out.bam$" | grep -v "tmp"); do
@@ -241,6 +246,7 @@ parallel --will-cite -j $nCores "
   if [ $pairstate == "paired" ]; then
     echo Transcript quantification with Salmon for Sample: {}
     ! test -d ${outputdir}/salmon_out/{} && mkdir -p ${outputdir}/salmon_out/{} || true # to allow mkdir to fail gracefully, we add '|| true'
+    
     if ! test -f ${outputdir}/salmon_out/{}/quant.sf
       then salmon quant -i ${index}/salmon_index -p 12 --validateMappings -l IU -o ${outputdir}/salmon_out/{} -1 ${readfilesdir}/{}_1.${fastaq} -2 ${readfilesdir}/{}_2.${fastaq} 2> ${outputdir}/salmon_out.stdout
     fi
@@ -259,7 +265,7 @@ parallel --will-cite -j $nCores "
       then
       echo {} running STAR
       STAR --genomeDir ${index} \
-        --runThreadN 2 \
+        --runThreadN 8 \
         --readFilesIn  ${readfilesdir}/{}_1.${fastaq} ${readfilesdir}/{}_2.${fastaq} \
         --readFilesCommand cat \
         --outSAMstrandField intronMotif \
@@ -270,6 +276,7 @@ parallel --will-cite -j $nCores "
         --alignSoftClipAtReferenceEnds No \
         --quantMode TranscriptomeSAM \
         --sjdbGTFfile $gtf \
+        --twopassMode Basic \
         --outFileNamePrefix ${outputdir}/alignments/{}/{}
 
       echo DONE STAR for {}
@@ -284,7 +291,7 @@ parallel --will-cite -j $nCores "
 
     echo {} running RSEM
     if ! test -s ${outputdir}/rsem_out/{}/{}.isoforms.results; then
-      rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64 --paired-end ${readfilesdir}/{}_1.${fastaq} ${readfilesdir}/{}_2.${fastaq}  ${index}/asim ${outputdir}/rsem_out/{}/{}
+      /nfs/scratch/chit/RSEM-1.3.3/rsem-calculate-expression --star --star-path /nfs/scratch/chit/STAR-2.7.9a/bin/Linux_x86_64 --paired-end ${readfilesdir}/{}_1.${fastaq} ${readfilesdir}/{}_2.${fastaq}  ${index}/asim ${outputdir}/rsem_out/{}/{}
       echo DONE for RSEM {}
     fi
 
@@ -313,7 +320,7 @@ parallel --will-cite -j $nCores "
       then
       echo {} running STAR
       STAR --genomeDir ${index} \
-        --runThreadN 8 \
+        --runThreadN 4 \
         --readFilesIn  ${readfilesdir}/{}.${fastaq} \
         --readFilesCommand cat \
         --outSAMstrandField intronMotif \
@@ -324,6 +331,7 @@ parallel --will-cite -j $nCores "
         --alignSoftClipAtReferenceEnds No \
         --quantMode TranscriptomeSAM \
         --sjdbGTFfile $gtf \
+        --twopassMode Basic \
         --outFileNamePrefix ${outputdir}/alignments/{}/{} 
 
       echo DONE STAR for {}
@@ -338,7 +346,7 @@ parallel --will-cite -j $nCores "
     
     if ! test -f ${outputdir}/rsem_out/{}/{}.genes.results
     then
-      rsem-calculate-expression --star --star-path /nfs/home/students/chit/STAR-2.7.8a/bin/Linux_x86_64 ${readfilesdir}/{}.${fastaq} ${index}/asim ${outputdir}/rsem_out/{}/{}
+      /nfs/scratch/chit/RSEM-1.3.3/rsem-calculate-expression --star --star-path /nfs/scratch/chit/STAR-2.7.9a/bin/Linux_x86_64 ${readfilesdir}/{}.${fastaq} ${index}/asim ${outputdir}/rsem_out/{}/{}
   
     fi
       
@@ -354,7 +362,7 @@ parallel --will-cite -j $nCores "
 
     if ! test -s ${outputdir}/qort/{}/QC.spliceJunctionCounts.knownSplices.txt.gz; then
       echo {} running QoRT
-      java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+      java -jar /nfs/scratch/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
                 --stranded \
                 ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam \
                 ${gtf} \
@@ -369,7 +377,7 @@ parallel --will-cite -j $nCores "
 
     # if ! test -s ${outputdir}/qort{2}/{1}/QC.geneCounts.txt.gz; then
     #   echo ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam
-    #   java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+    #   java -jar /nfs/scratch/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
     #             --stranded \
     #             ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam \
     #             ${gtf} \
@@ -390,7 +398,7 @@ parallel --will-cite -j $nCores "
 
     if ! test -s ${outputdir}/qort/{}/QC.geneCounts.txt.gz; then
       echo {} running QoRT
-      java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+      java -jar /nfs/scratch/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
                 --stranded \
                 --singleEnded \
                 ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam \
@@ -408,7 +416,7 @@ parallel --will-cite -j $nCores "
 
     # if ! test -s ${outputdir}/qort1/{}/QC.geneCounts.txt.gz; then
     #   echo {} running QoRT
-    #   java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+    #   java -jar /nfs/scratch/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
     #             --stranded \
     #             --singleEnded \
     #             ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam_tmp1.bam \
@@ -431,7 +439,7 @@ parallel --will-cite -j $nCores "
 
     # if ! test -s ${outputdir}/qort{2}/{1}/QC.geneCounts.txt.gz; then
     #   echo ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam
-    #   java -jar /nfs/home/students/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
+    #   java -jar /nfs/scratch/chit/hartleys-QoRTs-099881f/QoRTs.jar QC \
     #             --stranded \
     #             --singleEnded \
     #             ${outputdir}/alignments/{1}/{1}Aligned.sortedByCoord.out.bam_tmp{2}.bam \
@@ -448,7 +456,6 @@ parallel --will-cite -j $nCores "
 
 
 
-conda activate htseq
 
 #ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --gnu --will-cite -j $nCores "
 for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq); do
@@ -463,8 +470,9 @@ for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F-
       samtools view -h ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam
     fi 
 
-    if [ -z "$(ls -A ${outputdir}/results/htseq_exon)" ]; then
+    if ! test -s "${outputdir}/results/htseq_exon/${fas}"* ; then
     #if ! test -d ${outputdir}/results/htseq_exon; then
+      echo ${fas} not there
       python ${path}/runner/seqGSEA/count_in_exons.py -p yes ${index}/this_gtf.exon ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.sam ${outputdir} ${fas} ${meta}
     fi
     
@@ -494,7 +502,7 @@ done
 # for file in $(ls); do sed 's/\"//g' $file > ${file}_clean;  mv ${file}_clean ${file}; done;
 # popd
 
-conda activate nease
+
 ################### DSGSeq ###################
 #ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --gnu  --will-cite -j $nCores "
 
@@ -589,17 +597,17 @@ fi
 
 echo "running iso-KTSP"
 if ! test -f ${outputdir}/results/salmon_isoktsp_output_${groupl[0]}_${groupl[1]}.txt; then
-  java -jar /nfs/home/students/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/salmon_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/salmon_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
+  java -jar /nfs/scratch/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/salmon_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/salmon_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
 fi
 
 if ! test -f ${outputdir}/results/kal_isoktsp_output_${groupl[0]}_${groupl[1]}.txt;
   then
-  java -jar /nfs/home/students/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/kal_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/kal_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
+  java -jar /nfs/scratch/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/kal_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/kal_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
 fi
 
 if ! test -f ${outputdir}/results/rsem_isoktsp_output_${groupl[0]}_${groupl[1]}.txt;
   then
-  java -jar /nfs/home/students/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/rsem_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/rsem_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
+  java -jar /nfs/scratch/chit/iso-kTSP_v1.0.3.jar ${outputdir}/results/rsem_isoktsp_count.txt -i -n 2 -s 5000 -o ${outputdir}/results/rsem_isoktsp_output_${groupl[0]}_${groupl[1]}.txt --seed 1234 -c ${groupl[0]} ${groupl[1]}
 fi
 
 echo "Finished running iso-KTSP"
@@ -651,7 +659,7 @@ echo "Running JunctionSeq from R"
 echo "#########################"
 # if ! grep -q "junctionseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
 #   then
-#   # singularity run --bind ${outputdir}:/MOUNT --bind /nfs/home/students/chit/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
+#   # singularity run --bind ${outputdir}:/MOUNT --bind /nfs/scratch/chit/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
 #   #docker run -v ${outputdir}:/MOUNT --rm --name 'jcseq' jcseq 
 #   Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
 # fi
@@ -672,7 +680,7 @@ echo "Running Cuffdiff from R"
 echo "#########################"
 if ! grep -q "cuffdiff" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
 then
-  # Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
+  Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
 fi
 
 

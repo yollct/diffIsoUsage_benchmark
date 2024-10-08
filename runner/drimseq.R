@@ -30,7 +30,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
 
     
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
-    # groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
+    groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
 
     cnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$feature_id, txi$counts)
     cnt <- cnt[rowSums(salmoncnt)>10,]
@@ -65,11 +65,11 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    # restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
 
-    # restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
-    # restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    # restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
+    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
+    restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
     ######### stageR #########
     # library(stageR)
@@ -122,10 +122,10 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     # srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     # srestx <- full_join(srestx, stagetx, by="feature_id")
     
-    #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
+    # restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    # write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
     # write.table(sresgene, paste0(outdir, sprintf("/results/stager_salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
     # write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
@@ -177,12 +177,12 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
-    # res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    # restx <- data.frame(feature_id=unique(rgenename$feature_id))
+    res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
+    restx <- data.frame(feature_id=unique(rgenename$feature_id))
     
-    # restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
-    # restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    # restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
+    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
+    restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
     print("Running kallisto stage R")
     ######### stageR #########
@@ -237,10 +237,10 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     # srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     # srestx <- full_join(srestx, stagetx, by="feature_id")
 
-    #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
+    # restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    # write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
     # write.table(sresgene, paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
     # write.table(srestx, paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
@@ -296,12 +296,12 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
-    # res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    # restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
+    restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
 
-    # restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
-    # restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    # restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
+    restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
+    restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
     ######### stageR #########
     # library(stageR)
@@ -354,10 +354,10 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     # srestx$feature_id <- lapply(srestx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     # srestx <- full_join(srestx, stagetx, by="feature_id")
     
-    #restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
+    # restx <- restx %>% dplyr::rename(`drimseq_stageR`=transcript, feature_id=txID)
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
-    # write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 
     # write.table(sresgene, paste0(outdir, sprintf("/results/stager_rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
     # write.table(srestx, paste0(outdir, sprintf("/results/stager_rsem_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")

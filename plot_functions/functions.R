@@ -108,15 +108,18 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
             splitcat <- unique(truthfile[split][,1])
         }
         print(splitcat)
+        not_in_truth_at_all <- methoddf$feature_id[!methoddf$feature_id %in% truthfile$feature_id]
+        
         for (i in splitcat){
             splitted_truth <- truthfile %>% dplyr::filter(truthfile[split]==i)
             
             not_this_truth <- truthfile[truthfile[split]!=i,]$feature_id 
-
-            
+            this_truth <- c(splitted_truth$feature_id)
+            print("here2")
+            print(i)
             ## filter gene that is not this category
-            splitted_method <- methoddf %>% dplyr::filter(!feature_id %in% not_this_truth)
-            
+            splitted_method <- methoddf %>% dplyr::filter(feature_id %in% this_truth)
+            print(splitted_method %>% nrow)
             
             thisout <- do.call(cbind, sapply(colnames(splitted_method)[2:ncol(splitted_method)], function(method){
                 namet <- splitted_method[,method]
@@ -126,17 +129,24 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
                 x <- thresholds[method,]$thres
                 namet$value <- lapply(namet$value, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
                 print(method)
+                print(x)
                 boomet <- lapply(namet$value, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
                 #precisions <- sapply(thresholds, function(x){
                 
                 tp <- sum(unique(namet$feature_id[boomet]) %in% splitted_truth[splitted_truth$status==1,]$feature_id) 
                 fp <- sum(!unique(namet$feature_id[boomet]) %in% splitted_truth[splitted_truth$status==1,]$feature_id) 
                 fn <- sum(!unique(namet$feature_id[!boomet]) %in% splitted_truth[splitted_truth$status==0,]$feature_id) 
-                
+                tn <- sum(unique(namet$feature_id[!boomet]) %in% splitted_truth[splitted_truth$status==0,]$feature_id)
+
                 pp <- length(unique(namet$feature_id[boomet]))
-                print(pp)
+                print(tp)
+                print(fp)
+                print(fn)
+                print(tn)
                 precisions <- tp/pp
                 f1 <- 2*tp/(2*tp+fp+fn)
+                # mcc <- (tn*tp)-(fp*fn)/(sqrt((tn+fn)*(fp+tp)*(tn+fp)*(fn+tp)))
+                # mcc <- ifelse(is.na(mcc), 0, mcc)
                 #})
                 #print(truthfile$feature_id[!truthfile[truthfile$status==1,]$feature_id %in% names(met)[met<x]])
                 #recall <- sapply(thresholds, function(x){
@@ -150,8 +160,9 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
             
                 
                 recall <- tp/p
-    
+
             #})
+                
                 outout <- data.frame(fdr=c(precisions, recall, f1, tp, p, pp), type=rep(c("precision", "recall", "f1", "truepos", "realpos", "detectedpos"), each=length(precisions)), tool=rep(method, length(precisions)*3), thresholds=rep(x,3), splits=rep(i, length(precisions)*3))
                 list(t(outout))
             }))
@@ -258,7 +269,7 @@ pivot_output <- function(outputpr, split=NULL){
         wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("2","3","4","5"))
         wideoutputpr$recall[is.nan(wideoutputpr$recall)] = 0
     } else if (split=="events") {
-        wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "0")
+        # wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "0")
         wideoutputpr$tool <- factor(wideoutputpr$tool)
         wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("DTE","DTU","IS"))
         wideoutputpr$recall[is.nan(wideoutputpr$recall)] = 0

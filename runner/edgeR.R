@@ -15,6 +15,7 @@ print(con)
 
 print("in edgeR")
 resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
+restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
 
 meta1 = read.csv(meta, sep="\t")
 row.names(meta1) <- meta1$sample_id
@@ -53,12 +54,16 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
  
     res1 <- res %>% dplyr::select(GeneID, FDR) %>% group_by(GeneID)  %>% summarise(FDR=min(FDR)) %>% na.omit() %>% unique()
     
+    edgetx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
 
     edgeres <- res1 %>% dplyr::rename("feature_id"="GeneID", "edgeR"="FDR")
-
+    
     resgene <- full_join(resgene, edgeres, by="feature_id")
+    restx <- full_join(restx, edgetx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    
 }
 
 
@@ -74,7 +79,7 @@ rm(sresgene)
 rm(srestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
-
+restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
 if (!any(grepl("edgeR", colnames(resgene)))) { 
     print("Running Limma kallisto counts")
@@ -109,10 +114,16 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
 
     res1 <- res %>% dplyr::select(GeneID, FDR) %>% group_by(GeneID) %>% summarise(FDR=min(FDR)) %>% na.omit() %>% unique() 
     edgeres <- res1 %>% dplyr::rename("feature_id"="GeneID", "edgeR"="FDR")
+    edgetx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
 
+    
+    resgene <- full_join(resgene, edgeres, by="feature_id")
+    restx <- full_join(restx, edgetx, by="feature_id")
     resgene <- full_join(resgene, edgeres, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+}
 }
 
 rm(genename)
@@ -125,6 +136,7 @@ rm(sresgene)
 rm(srestx)
 
 resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
+restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
 ########## RSEM #########
 if (!any(grepl("edgeR", colnames(resgene)))) {
@@ -158,9 +170,16 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
 
     res1 <- res %>% dplyr::select(GeneID, FDR) %>% group_by(GeneID) %>% summarise(FDR=min(FDR)) %>% na.omit() %>% unique() 
 
+    edgetx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
+
     edgeres <- res1 %>% dplyr::rename("feature_id"="GeneID", "edgeR"="FDR")
+    
+    resgene <- full_join(resgene, edgeres, by="feature_id")
+    restx <- full_join(restx, edgetx, by="feature_id")
 
     resgene <- full_join(resgene, edgeres, by="feature_id")
+
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
+    write.table(restx, paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
 }
 
