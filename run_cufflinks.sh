@@ -10,7 +10,7 @@
 #SBATCH --time=4-00:00:00
 
 
-PATH=$PATH:/nfs/scratch/chit/cufflinks-2.2.1-gffpatch.Linux_x86_64/
+PATH=$PATH:/nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64
 PATH=$PATH:/nfs/scratch/chit/samtools-1.13
 PATH=$PATH:/usr/bin/tophat2
 
@@ -59,10 +59,10 @@ echo running cufflinks
  
 ! test -d ${outputdir}/results/star_cufflinks && mkdir -p ${outputdir}/results/star_cufflinks
 ls ${outputdir}/alignments | parallel --will-cite -j $nCores "  
-    echo {}
     ! test -d ${outputdir}/results/star_cufflinks/{} && mkdir -p ${outputdir}/results/star_cufflinks/{}
     if ! test -s ${outputdir}/resuts/star_cufflinks/{}/isoforms.fpkm_tracking;
       then
+      echo {}
       /nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64/cufflinks -g ${gtf} -o ${outputdir}/results/star_cufflinks/{} ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam -p 50
     fi
 "

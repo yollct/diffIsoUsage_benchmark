@@ -135,6 +135,9 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
 ### run rsem counts###############################################
 if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))) {
     print("Running DRIMSeq kallisto counts")
+    groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
+    groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
+    
     rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
     names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
     txi <- tximport(rfiles, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
@@ -263,7 +266,7 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     salmoncnt <- txi$counts
     
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
-    # groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
+    groundtruth_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
     cnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$transcript_id, txi$counts)
     cnt <- cnt[rowSums(salmoncnt)>10,]
     colnames(cnt) <- lapply(colnames(cnt), function(x){gsub(".fq", "", x)}) %>% unlist

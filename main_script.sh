@@ -53,6 +53,9 @@ echo $name
 source ${config}
 shopt -s extglob
 
+
+
+
 ! test -d ${outputdir}/results && mkdir -p ${outputdir}/results || true
 
 echo "Checking parameters..."
@@ -212,11 +215,9 @@ done
 # fi
 
 STAR --version
-which conda
-# # ACTIVATE ANACONDA
-# eval "$(/nfs/home/students/chit/miniconda3/bin/conda shell.bash hook)"
 
-# conda activate /nfs/scratch/chit/.conda/env/r-env
+# # ACTIVATE ANACONDA
+
 # echo "conda activated"
 
 # chrs='1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22'
@@ -455,6 +456,22 @@ parallel --will-cite -j $nCores "
 " ::: $samples 
 
 
+for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq); do
+  echo running DSGseq...
+
+  ! test -d ${outputdir}/results/dsgseq && mkdir -p ${outputdir}/results/dsgseq || true
+
+  if ! test -s ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed; 
+    then
+    bamToBed -i ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed &
+  fi 
+  
+  if ! test -s ${outputdir}/results/dsgseq/${fas}.count; then
+    SeqExpress count ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed ${genepred} ${outputdir}/results/dsgseq/${fas}.count &
+  fi
+
+done
+
 
 
 #ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --gnu --will-cite -j $nCores "
@@ -477,6 +494,7 @@ for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F-
     fi
     
     echo DONE HTSeq ${fas}
+    
 
   else 
     echo running for single-end read data
@@ -492,7 +510,7 @@ for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq\|fastq" | awk -F-
     fi 
 
     echo DONE HTSeq ${fas}
-  
+    
   fi
 done
 
@@ -505,22 +523,6 @@ done
 
 ################### DSGSeq ###################
 #ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq | parallel --gnu  --will-cite -j $nCores "
-
-for fas in $(ls ${readfilesdir} | grep "fasta.gz\|fastq.gz\|fq" | awk -F- '{ print $1 }' | sed 's:.*/::' | sed 's/.\///g' | sed 's:_[^_]*$::' | cut -d "." -f 1 | sort | uniq); do
-  echo running DSGseq...
-
-  ! test -d ${outputdir}/results/dsgseq && mkdir -p ${outputdir}/results/dsgseq || true
-
-  if ! test -s ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed; 
-    then
-    bamToBed -i ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bam > ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed &
-  fi 
-  
-  if ! test -s ${outputdir}/results/dsgseq/${fas}.count; then
-    SeqExpress count ${outputdir}/alignments/${fas}/${fas}Aligned.sortedByCoord.out.bed ${genepred} ${outputdir}/results/dsgseq/${fas}.count &
-  fi
-
-done
 
 
 
@@ -640,48 +642,19 @@ fi
 
 #Rscript cuffdiff.R
 
-echo "#########################"
-echo "Running seqGSEA from R"
-echo "#########################"
-if ! grep -q "seqGSEA" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; then
-  for file in $(ls ${outputdir}/results/htseq_exon); 
-  do
-    sed 's/"//g' ${outputdir}/results/htseq_exon/${file} > ${outputdir}/results/htseq_exon/temp.txt 
-    #mv ${outputdir}/results/htseq_exon/temp.txt ${outputdir}/results/htseq_exon/${file}
-  done
-  Rscript ${path}/runner/seqGSEA/seqgsea.R $outputdir $path $meta $index ${groupl[@]}
-fi
-
-# conda install -c r r r-essentials
-
-echo "#########################"
-echo "Running JunctionSeq from R"
-echo "#########################"
-# if ! grep -q "junctionseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
-#   then
-#   # singularity run --bind ${outputdir}:/MOUNT --bind /nfs/scratch/chit/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
-#   #docker run -v ${outputdir}:/MOUNT --rm --name 'jcseq' jcseq 
-#   Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
-# fi
-
 
 echo "#########################"
 echo "Running NBSplice from R"
 echo "#########################"
 if ! grep -q "nbsplice" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
   then
-  singularity run --bind ${outputdir}:/MOUNT --bind /nfs/proj/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_nbsplice/nbsplice.sif
+  apptainer run --mount type=bind,src=${outputdir},dst=/mnt /nfs/proj/is_benchmark/runner/docker_nbsplice/nbsplice.sif
+  # singularity run --bind ${outputdir}:/MOUNT --bind /nfs/proj/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_nbsplice/nbsplice.sif
   #docker run -v ${outputdir}:/MOUNT --rm --name 'nbsplice' nbsplice
   #Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
 fi
 
-echo "#########################"
-echo "Running Cuffdiff from R"
-echo "#########################"
-if ! grep -q "cuffdiff" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
-then
-  Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
-fi
+
 
 
 echo "#########################"
@@ -737,6 +710,41 @@ fi
 #   singularity run --bind ${outputdir}:/MOUNT --bind /nfs/proj/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing2docker/iuta.sif
 
 # fi
+
+
+echo "#########################"
+echo "Running seqGSEA from R"
+echo "#########################"
+if ! grep -q "seqGSEA" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+  for file in $(ls ${outputdir}/results/htseq_exon); 
+  do
+    sed 's/"//g' ${outputdir}/results/htseq_exon/${file} > ${outputdir}/results/htseq_exon/temp.txt 
+    #mv ${outputdir}/results/htseq_exon/temp.txt ${outputdir}/results/htseq_exon/${file}
+  done
+  Rscript ${path}/runner/seqGSEA/seqgsea.R $outputdir $path $meta $index ${groupl[@]}
+fi
+
+
+# conda install -c r r r-essentials
+
+echo "#########################"
+echo "Running JunctionSeq from R"
+echo "#########################"
+# if ! grep -q "junctionseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "junctionseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+#   then
+#   # singularity run --bind ${outputdir}:/MOUNT --bind /nfs/scratch/chit/is_benchmark/Rlib:/usr/local/lib/R/site-library /nfs/proj/is_benchmark/runner/sing_junctionseq/jcseq.sif 
+#   #docker run -v ${outputdir}:/MOUNT --rm --name 'jcseq' jcseq 
+#   Rscript ${path}/runner/junctionseq_res.R $outputdir $path $meta ${groupl[@]} 
+# fi
+
+
+echo "#########################"
+echo "Running Cuffdiff from R"
+echo "#########################"
+if ! grep -q "cuffdiff" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+then
+  Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
+fi
 
 echo "#########################"
 echo "Running rDiff from R"

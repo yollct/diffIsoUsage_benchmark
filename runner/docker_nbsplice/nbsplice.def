@@ -8,7 +8,6 @@ From: rocker/r-ver:4.2
     NBsplice.R 
     dependencies.R 
     compare_list.txt
-    meta.txt
     Matrix_1.6-0.tar.gz
 
 %post
@@ -46,10 +45,10 @@ From: rocker/r-ver:4.2
 %runscript
     Rscript /dependencies.R 
 
-    for x in $(cat /MOUNT/compare_list.txt); do
+    for x in $(cat /mnt/compare_list.txt); do
         con1=$(echo ${x} | cut -d ';' -f 1)
         con2=$(echo ${x} | cut -d ';' -f 2)
 
-        Rscript NBsplice.R . meta.txt $con1 $con2
+        Rscript /NBsplice.R /mnt /mnt/meta.txt $con1 $con2
         echo done $con1 $con2
     done 

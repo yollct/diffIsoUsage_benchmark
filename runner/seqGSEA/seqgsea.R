@@ -1,4 +1,5 @@
-#install.packages("/nfs/home/students/chit/SeqGSEA_1.36.0.tar.gz", repos=NULL, type="source")
+# install.packages("/nfs/home/students/chit/SeqGSEA_1.36.0.tar.gz", repos=NULL, type="source")
+
 library(SeqGSEA)
 library(DESeq2)
 library(tidyverse)

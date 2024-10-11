@@ -2,9 +2,9 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --output=/nfs/scratch/chit/paired45.out
-#SBATCH --error=/nfs/scratch/chit/paired45err
-#SBATCH --job-name=pair4_0.5
+#SBATCH --output=/nfs/scratch/chit/paired41.out
+#SBATCH --error=/nfs/scratch/chit/paired41.err
+#SBATCH --job-name=pair4_1
 #SBATCH --mem-per-cpu=30G
 #SBATCH --time=4-00:00:00
 #SBATCH --partition=exbio-cpu
@@ -20,8 +20,8 @@
 
 
 seq="pair"
-nsam="8"
-bg="0.7"
+nsam="4"
+bg="0.1"
 reps="r1 r2 r3 r4 r5"
 
 # for seq in $seqtype; do

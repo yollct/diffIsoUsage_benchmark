@@ -55,7 +55,7 @@ if (!any(grepl("nbsplice", colnames(resgene)))) {
     nbgene <- res %>% dplyr::select(gene, geneFDR) %>% group_by(gene) %>% summarise(nbsplice=min(geneFDR)) %>% dplyr::rename(feature_id=gene)
     resgene <- full_join(resgene, nbgene, by="feature_id")
 
-    nbtx <- res %>% dplyr::select(iso, FDR) %>% dplyr::rename(feature_id=iso)
+    nbtx <- res %>% dplyr::select(iso, FDR) %>% dplyr::rename(feature_id=iso, nbsplice=FDR)
     restx <- inner_join(restx, nbtx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
