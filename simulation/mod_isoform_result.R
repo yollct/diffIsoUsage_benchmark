@@ -10,9 +10,9 @@ noise_level <- as.numeric(args[3])
 
 
 ## specify data paths ##
-readfilesdir <- "/nfs/scratch/chit/covid_ts/rsem_out/" # directory to rsem output (as input)
-outdir <- sprintf("/nfs/scratch/chit/new_simulations/%s/", newdir) # directory to output (output simulated counts)
-meta <- "/nfs/scratch/chit/new_simulations/single_temp/meta.txt" # meta file (tab-separated)
+readfilesdir <- "~/rsem_out/" # directory to rsem output (as input)
+outdir <- sprintf("%s", newdir) # directory to output (output simulated counts)
+meta <- "~/simulation/single_temp/meta.txt" # meta file (tab-separated)
 #### this is how the meta file looks like #####
 #### first column : sample_id (in your case cell id)
 #### second column : group for comparison 
