@@ -137,3 +137,25 @@ ggplot(data.frame(x=salr$DSGseq[salr$DSGseq]), aes(x))+
     theme_light()+
     geom_vline(xintercept=5)+theme(axis.title = element_text(size=15))
 dev.off()
+
+
+#plot a false negative for a gene 
+outdir <- "/nfs/scratch/chit/new_simulations/pair_50_8_r1_0"
+gene <- "ENSG00000000005"
+
+truthfile_tx <- read.csv(paste0(outdir, "/results/truthtable_tx.csv"), sep="\t")
+truthfile_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
+salc <- read.csv("/nfs/scratch/chit/new_simulations/pair_50_8_r1_0/results/salmon_count.csv", sep=",")
+salr <- read.csv(paste0(outdir,"/results/rsem_res_gene_N_T.txt"), sep="\t")
+salc$feature_id <- lapply(salc$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist()
+txid <- truthfile_tx[truthfile_tx$gene_id==gene,]$feature_id
+salr[salr$feature_id %in% txid,]
+
+truthfile_tx$feature_id %>% length
+sum(salc$feature_id %in% truthfile_tx$feature_id)
+sum(truthfile_tx$feature_id %in% salc$feature_id)
+truthfile_tx %>% nrow
+sum(truthfile_tx[truthfile_tx$status==1,]$feature_id %in% salc$feature_id)
+
+truthfile_tx[truthfile_tx$status==1,]$feature_id %>% length
+sum(truthfile_g$feature_id %in% salr$feature_id)

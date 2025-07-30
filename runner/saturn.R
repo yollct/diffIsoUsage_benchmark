@@ -3,6 +3,7 @@ library(satuRn)
 library(SummarizedExperiment)
 library(tximport)
 library(edgeR)
+suppressMessages(library(DTUrtle))
 
 args <- commandArgs(trailingOnly=TRUE)
 outdir <- args[1]
@@ -32,7 +33,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     row.names(txinfo) <- txinfo$isoform_id
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="salmon", txOut=TRUE)
     salmoncnt <- txi$counts
 
     salmoncnt <- salmoncnt[,meta1$sample_id]
@@ -84,7 +85,6 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     sumExp <- satuRn::testDTU(
                 object = sumExp,
                 contrasts = L,
-                diagplot1 = TRUE,
                 sort = FALSE
             )
 
@@ -184,14 +184,21 @@ colSums(checkcount)
 
 if (!any(grepl("saturn", colnames(resgene)))) {
     print("Run saturn on kallisto counts")
+
     genename  <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
     txinfo <- genename %>% dplyr::select(gene_id, feature_id) %>% dplyr::rename(isoform_id = "feature_id")
     row.names(txinfo) <- txinfo$isoform_id
     print(meta1$sample_id) 
 
-    files <- paste0(outdir, "/kallisto_out/", meta1$sample_id,"/abundance.h5")
-    names(files) <- gsub(".*/","",gsub("/abundance.h5","",files))
-    txi <- tximport(files, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
+    gtf <- "/nfs/data/references/ensembl98_GRCh38/Homo_sapiens.GRCh38.98.gtf"
+    tx2gene <- import_gtf(gtf_file = gtf)
+    tx2gene$transcript_id_ver <- paste0(tx2gene$transcript_id,".", tx2gene$transcript_version)
+    tx2gene <- move_columns_to_front(df = tx2gene, 
+                                    columns = c("transcript_id_ver", "gene_id"))
+
+    files <- paste0(outdir, "/kallisto_out/", meta1$sample_id,"/abundance.tsv")
+    names(files) <- gsub(".*/","",gsub("/abundance.tsv","",files))
+    txi <- tximport(files, type="kallisto", txOut=TRUE, tx2gene = tx2gene, ignoreAfterBar = TRUE)
     salmoncnt <- txi$counts
 
     salmoncnt <- salmoncnt[,meta1$sample_id]
@@ -240,7 +247,6 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     sumExp <- satuRn::testDTU(
                 object = sumExp,
                 contrasts = L,
-                diagplot1 = TRUE,
                 sort = FALSE
             )
 
@@ -346,7 +352,7 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     genename  <- read.csv(files[1], sep="\t")
     txinfo <- genename %>% dplyr::select(gene_id, transcript_id) %>% dplyr::rename(isoform_id = "transcript_id")
     row.names(txinfo) <- txinfo$isoform_id
-    txi <- tximport(files, type="rsem", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="rsem", txOut=TRUE)
     salmoncnt <- txi$counts
 
     salmoncnt <- salmoncnt[,meta1$sample_id]
@@ -395,7 +401,6 @@ if (!any(grepl("saturn", colnames(resgene)))) {
     sumExp <- satuRn::testDTU(
                 object = sumExp,
                 contrasts = L,
-                diagplot1 = TRUE,
                 sort = FALSE
             )
 

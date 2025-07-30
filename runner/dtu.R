@@ -166,9 +166,9 @@ if (!any(grepl("dturtle", colnames(resgene)))) {
     tx2gene <- move_columns_to_front(df = tx2gene, 
                                         columns = c("transcript_id_ver", "gene_id"))
 
-    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
-    names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
-    rcts <- import_counts(files = rfiles, type = "kallisto", countsFromAbundance="scaledTPM")
+    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
+    names(rfiles) <- gsub(".*/","",gsub("/abundance.tsv","",rfiles))
+    rcts <- import_counts(files = rfiles, type = "kallisto", tx2gene = tx2gene, ignoreAfterBar = TRUE, countsFromAbundance="scaledTPM")
     rcts <- rcts[,colnames(rcts)[colnames(rcts) %in% meta1$sample_id]]
 
     rpd <- data.frame("id"=colnames(rcts), "group"=meta1$group, 

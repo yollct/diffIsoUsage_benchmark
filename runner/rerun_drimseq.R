@@ -26,7 +26,10 @@ tx2gene$transcript_id_ver <- paste0(tx2gene$transcript_id,".", tx2gene$transcrip
 tx2gene <- move_columns_to_front(df = tx2gene, 
                                     columns = c("transcript_id_ver", "gene_id"))
 
-if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))) {
+resgene <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)))
+restx <- read_tsv(paste0(outdir, sprintf("/results/salmon_res_tx_%s_%s.txt", con1, con2)))
+
+if (!any(grepl("drimseq", colnames(resgene)))) {
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
@@ -64,19 +67,17 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     res <- DRIMSeq::results(d) 
 
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
-    resgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
+    res1 <- res1 %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
 
-    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"))
-    resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
+    resgene <- full_join(res1, resgene, by=c("feature_id"))
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
+    res2 <- res2 %>% dplyr::rename(`drimseq`=adj_pvalue)
 
     restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
     ######### stageR #########
     # library(stageR)
@@ -138,9 +139,13 @@ if (!file.exists(paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", co
     # write.table(srestx, paste0(outdir, sprintf("/results/stager_salmon_res_tx_%s_%s.txt", con1, con2)), row.names=FALSE, sep="\t")
 }
 
-#### run RSEM counts
-### run rsem counts###############################################
-if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))) {
+
+resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
+restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
+
+#### run KALLISTO counts
+### run kallisto counts###############################################
+if (!any(grepl("drimseq", colnames(resgene)))) {
     print("Running DRIMSeq kallisto counts")
     
     groundtruth_g <- read.csv(paste0(outdir, "/results/truthtable_gene.csv"), sep="\t")
@@ -181,19 +186,18 @@ if (!file.exists(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1,
     res <- DRIMSeq::results(d) 
 
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
-    resgene <- data.frame(feature_id=unique(rgenename$gene_id))
+    res1 <- res1 %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
+    
 
-    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"))
-    resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
+    resgene <- full_join(res1, resgene, by=c("feature_id"))
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    restx <- data.frame(feature_id=unique(rgenename$feature_id))
+    res2 <- res2 %>% dplyr::rename(`drimseq`=adj_pvalue)
     
     restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
 
     print("Running kallisto stage R")
     ######### stageR #########
@@ -264,8 +268,11 @@ rm(restx)
 rm(sresgene)
 rm(srestx)
 
+resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))
+restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
+
 ########## RSEM #########
-if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)))) {
+if (!any(grepl("drimseq", colnames(resgene)))) {
     
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
@@ -300,19 +307,18 @@ if (!file.exists(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1
     res <- DRIMSeq::results(d) 
 
     res1 <- res %>% dplyr::select(gene_id, adj_pvalue) %>% na.omit() 
-    resgene <- data.frame(feature_id=unique(groundtruth_g$feature_id))
+    res1 <- res1 %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
 
-    resgene <- full_join(res1, resgene, by=c("gene_id"="feature_id"))
-    resgene <- resgene %>% dplyr::rename(`drimseq`=adj_pvalue, feature_id=gene_id)
+    resgene <- full_join(res1, resgene, by=c("feature_id"))
 
     resfea <- DRIMSeq::results(d, level="feature") %>% na.omit()
 
     res2 <- resfea %>% dplyr::select(feature_id, adj_pvalue) %>% na.omit() 
-    restx <- data.frame(feature_id=unique(groundtruth_tx$feature_id))
-
+    res2 <- res2 %>% dplyr::rename(`drimseq`=adj_pvalue)
+    
     restx <- full_join(res2, restx, by=c("feature_id"="feature_id"))
     restx$feature_id <- lapply(restx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
-    restx <- restx %>% dplyr::rename(`drimseq`=adj_pvalue)
+
 
     ######### stageR #########
     # library(stageR)

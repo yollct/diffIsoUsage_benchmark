@@ -2,12 +2,13 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --output=/nfs/scratch/chit/paired41.out
-#SBATCH --error=/nfs/scratch/chit/paired41.err
-#SBATCH --job-name=pair4_1
+#SBATCH --output=/nfs/scratch/chit/s40.out
+#SBATCH --error=/nfs/scratch/chit/s40.err
+#SBATCH --job-name=s40
 #SBATCH --mem-per-cpu=30G
 #SBATCH --time=4-00:00:00
-#SBATCH --partition=exbio-cpu
+##SBATCH --partition=exbio-cpu
+#SBATCH --partition=exbio-long-jobs
 
 #path="/nfs/home/students/chit/is_benchmark"
 
@@ -19,21 +20,23 @@
 # done;
 
 
-seq="pair"
-nsam="4"
-bg="0.1"
+seqtype="single"
+nsample="8"
+background="0 0.1 0.5 0.7 0.9"
 reps="r1 r2 r3 r4 r5"
 
-# for seq in $seqtype; do
-#     for nsam in $nsample; do
-#         for bg in $background; do
+for seq in $seqtype; do
+    for nsam in $nsample; do
+        for bg in $background; do
             for rep in $reps;
                 do
-                    bash main_script.sh --config /nfs/proj/is_benchmark/paired4_config.sh --name ${seq}_50_${nsam}_${rep}_${bg}
+                    #bash main_script.sh --config /nfs/proj/is_benchmark/paired4_config.sh --name ${seq}_50_${nsam}_${rep}_${bg}
+
+                    bash main_script_tx.sh --config /nfs/proj/is_benchmark/paired4_config.sh --name ${seq}_50_${nsam}_${rep}_${bg}
                 done;
-#         done;
-#     done;
-# done;
+        done;
+    done;
+done;
 
 # bash main_script.sh --config /nfs/data/Sys_CARE/sf_ameling_sys_care/sf_ameling_sys_car540_hgvnvdsx2_podocytes_nephrology/config.sh
 #bash main_script.sh --config /nfs/home/students/chit/is_benchmark/paired_config.sh

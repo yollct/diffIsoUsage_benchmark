@@ -12,6 +12,7 @@ library(doParallel)
 library(statmod)
 
 
+# Installing Mamba
 sourceFolder <- function(folder, recursive = FALSE, ...) 
 { 
     files <- list.files(folder, pattern = "[.][rR]$", 

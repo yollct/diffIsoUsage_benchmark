@@ -25,7 +25,6 @@ From: rocker/r-ver:4.2
     R -e "install.packages(\"tidyr\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
     R -e "install.packages(\"ggplot2\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
     R -e "install.packages(\"reshape2\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
-    R -e "install.packages(\"car\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
     R -e "BiocManager::install(\"tximport\",ask=FALSE, force=TRUE, lib=\"/Rlib\")"
     R -e "BiocManager::install(\"BiocParallel\",ask=FALSE, force=TRUE, lib=\"/Rlib\")"
     
@@ -34,8 +33,10 @@ From: rocker/r-ver:4.2
     R -e "install.packages(\"Matrix_1.6-0.tar.gz\", repo=NULL, type=\"source\", lib=\"/Rlib\")"
     R -e "install.packages(\"MatrixModels\", repo=\"https://cloud.r-project.org\")"
     R -e "install.packages(\"quantreg\", repo=\"https://cloud.r-project.org\")"
-    R -e "install.packages(\"car\", repo=\"https://cloud.r-project.org\")"
+    R -e "BiocManager::install(\"rtracklayer\", ask=FALSE, dependencies=TRUE, force=TRUE, lib=\"/Rlib\")"
+    R -e "install.packages(\"car\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
     R -e "install.packages(\"NBSplice_1.15.0.tar.gz\", repo=NULL, type=\"source\", lib=\"/Rlib\")"
+    
 
 %environment
     export PATH=/opt/root/bin:$PATH

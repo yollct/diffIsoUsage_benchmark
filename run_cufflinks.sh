@@ -56,11 +56,18 @@ source ${config}
 
 echo $name
 echo running cufflinks
- 
+
+set +eu
+
+# # ACTIVATE ANACONDA
+eval "$(conda shell.bash hook)"
+conda activate /nfs/scratch/chit/.conda/env/py2
+set -eu
+
 ! test -d ${outputdir}/results/star_cufflinks && mkdir -p ${outputdir}/results/star_cufflinks
 ls ${outputdir}/alignments | parallel --will-cite -j $nCores "  
     ! test -d ${outputdir}/results/star_cufflinks/{} && mkdir -p ${outputdir}/results/star_cufflinks/{}
-    if ! test -s ${outputdir}/resuts/star_cufflinks/{}/isoforms.fpkm_tracking;
+    if ! test -s ${outputdir}/results/star_cufflinks/{}/isoforms.fpkm_tracking;
       then
       echo {}
       /nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64/cufflinks -g ${gtf} -o ${outputdir}/results/star_cufflinks/{} ${outputdir}/alignments/{}/{}Aligned.sortedByCoord.out.bam -p 50
@@ -79,8 +86,6 @@ ls ${outputdir}/alignments | parallel --will-cite -j $nCores "
 
 echo running cuffmerge...
 find ${outputdir}/results -type f | grep "transcripts.gtf" > ${outputdir}/results/assembly_list.txt
-
-/nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64/cuffmerge -g ${gtf} -s ${fasta} -o ${outputdir}/results -p 12 ${outputdir}/results/assembly_list.txt
 
 
 echo here
@@ -105,7 +110,8 @@ done;
 echo ${group1l:1}
 
 if ! test -s ${outputdir}/results/cuffdiff_results/isoforms.count_tracking; then 
-  /nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64/cuffdiff -L g1,g2 -u ${outputdir}/results/merged.gtf -p 12 -b ${fasta} ${group1l:1} ${group2l:1} -o ${outputdir}/results/cuffdiff_results
+  /nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64/cuffmerge -g ${gtf} -s ${fasta} -o ${outputdir}/results -p 24 ${outputdir}/results/assembly_list.txt
+  /nfs/scratch/chit/cufflinks-2.2.1.Linux_x86_64/cuffdiff -L g1,g2 -u ${outputdir}/results/merged.gtf -p 24 -b ${fasta} ${group1l:1} ${group2l:1} -o ${outputdir}/results/cuffdiff_results
 fi 
 # echo running cufflinks - bowtie
 # ls ${outputdir}/alignments | grep "sample" | parallel --will-cite -j $nCores "  

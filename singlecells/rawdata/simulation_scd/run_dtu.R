@@ -1,9 +1,8 @@
-
+#R 4.2 2022/11
 library(DTUrtle)
 library(satuRn)
 library(tidyverse)
 library(biomaRt)
-library(satuRn)
 library(SummarizedExperiment)
 library(tximport)
 library(edgeR)
@@ -15,15 +14,14 @@ outdir <- "/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/"
 
 reps <- c(50, 100, 200, 500, 700)#, 100, 200, 500)#, 500,800)
 allfolders <- list.files(outdir, pattern="sim_data_balance")
-allfolders <- allfolders[grepl("0.1$",allfolders)] ### only noise = 0
+allfolders <- allfolders[grepl("1$",allfolders)] ### only noise = 0
 
-human <- useEnsembl(biomart="genes", dataset="hsapiens_gene_ensembl", version=107)
+human <- useEnsembl(biomart="genes", dataset="hsapiens_gene_ensembl", version='107')
 
 resgene <- do.call(c, lapply(allfolders, function(thisfolder){
         lapply(reps, function(r){
-    # Assuming count_matrix is your single-cell count matrix
-    # Replace this with your actual matri
-    print("run")
+    # Assuming count_matrix is your single-cell count matrixn
+    
     print(r)
     new_count <- readRDS(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/%s/sim_balance_2ct_rep%s.rds", thisfolder, r))
     
@@ -252,7 +250,7 @@ write.table(final_long, "singlecell_balance_finallong.csv")
 final_long <- read.csv("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/singlecell_balance_finallong.csv", sep=" ")
 supp.labs <- c("Precision", "Recall")
 names(supp.labs) <- c("precision", "recall")
-png("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/singlecell_0_balance_prere.png", res=300, width=3000, height=1000)
+png("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/singlecell_0.1_balance_prere.png", res=300, width=3000, height=1000)
 ggplot(final_long, aes(x=reps, y=mean, color=tool))+
     geom_point()+
     geom_line()+
@@ -260,7 +258,10 @@ ggplot(final_long, aes(x=reps, y=mean, color=tool))+
                  position=position_dodge(0.05))+
     facet_grid(.~measure, labeller=labeller(measure=supp.labs))+
     scale_color_manual(values=c("DTUrtle"='#999999','satuRn'='#E69F00'))+
-    theme_bw()+xlab("Number of cells per group") +ylab("Precision/Recall")
+    theme_bw()+xlab("Number of cells per group") +ylab("Precision/Recall")+
+    theme(text = element_text(size = 15),
+        axis.text.x = element_text(size=15, hjust = 1),
+        axis.text.y = element_text(size=15, hjust = 1)) 
 dev.off()
  
 mets <- c("DTUrtle", "satuRn")

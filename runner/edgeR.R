@@ -2,6 +2,7 @@ library(limma)
 library(edgeR)
 suppressMessages(library(tximport))
 suppressMessages(library(tidyverse))
+suppressMessages(library(DTUrtle))
 biocpar <- BiocParallel::MulticoreParam(12)
 
 args <- commandArgs(trailingOnly=TRUE)
@@ -25,7 +26,7 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="salmon", txOut=TRUE)
     salmontpm <- txi$counts
 
     salmoncnt <- data.frame(txi$counts)
@@ -55,7 +56,7 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
     res1 <- res %>% dplyr::select(GeneID, FDR) %>% group_by(GeneID)  %>% summarise(FDR=min(FDR)) %>% na.omit() %>% unique()
     
     edgetx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
-
+    edgetx$feature_id <- lapply(edgetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     edgeres <- res1 %>% dplyr::rename("feature_id"="GeneID", "edgeR"="FDR")
     
     resgene <- full_join(resgene, edgeres, by="feature_id")
@@ -83,9 +84,15 @@ restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, 
 
 if (!any(grepl("edgeR", colnames(resgene)))) { 
     print("Running Limma kallisto counts")
-    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
-    names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
-    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
+    gtf <- "/nfs/data/references/ensembl98_GRCh38/Homo_sapiens.GRCh38.98.gtf"
+    tx2gene <- import_gtf(gtf_file = gtf)
+    tx2gene$transcript_id_ver <- paste0(tx2gene$transcript_id,".", tx2gene$transcript_version)
+    tx2gene <- move_columns_to_front(df = tx2gene, 
+                                    columns = c("transcript_id_ver", "gene_id"))
+
+    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
+    names(rfiles) <- gsub(".*/","",gsub("/abundance.tsv","",rfiles))
+    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, tx2gene = tx2gene, ignoreAfterBar = TRUE)
 
     rgenename <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
 
@@ -115,7 +122,7 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
     res1 <- res %>% dplyr::select(GeneID, FDR) %>% group_by(GeneID) %>% summarise(FDR=min(FDR)) %>% na.omit() %>% unique() 
     edgeres <- res1 %>% dplyr::rename("feature_id"="GeneID", "edgeR"="FDR")
     edgetx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
-
+    edgetx$feature_id <- lapply(edgetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     
     resgene <- full_join(resgene, edgeres, by="feature_id")
     restx <- full_join(restx, edgetx, by="feature_id")
@@ -124,7 +131,7 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
     write.table(restx, paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
 }
-}
+
 
 rm(genename)
 rm(salmoncnt)
@@ -143,10 +150,10 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
     genename  <- read.csv(files[1], sep="\t")
-    txi <- tximport(files, type="rsem", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="rsem", txOut=TRUE)
 
     cnt <- data.frame(txi$counts)
-    rownames(cnt) <- rgenename$transcript_id
+    rownames(cnt) <- genename$transcript_id
 
     y <- DGEList(counts=cnt, genes=genename$transcript_id)
     y$genes$GeneID <- genename$gene_id
@@ -171,7 +178,8 @@ if (!any(grepl("edgeR", colnames(resgene)))) {
     res1 <- res %>% dplyr::select(GeneID, FDR) %>% group_by(GeneID) %>% summarise(FDR=min(FDR)) %>% na.omit() %>% unique() 
 
     edgetx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
-
+    edgetx$feature_id <- lapply(edgetx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
+    
     edgeres <- res1 %>% dplyr::rename("feature_id"="GeneID", "edgeR"="FDR")
     
     resgene <- full_join(resgene, edgeres, by="feature_id")

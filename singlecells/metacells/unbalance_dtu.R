@@ -7,13 +7,14 @@ library(SummarizedExperiment)
 library(tximport)
 library(DEXSeq)
 library(DRIMSeq)
+library(Seurat)
 
 library(edgeR)
 source('/nfs/proj/is_benchmark/singlecells/testDTU.R')
 biocpar <- BiocParallel::MulticoreParam(4)
 outdir <- "/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/"
 
-reps <- c(10, 50, 100, 200, 500)#n of meta cells
+reps <- c(2,3,4,5,6,7)#n of meta cells
 allfolders <- list.files(outdir, pattern="sim_data_unbalance")
 allfolders <- allfolders[grepl("0$",allfolders)] ### only noise = 0
 
@@ -21,56 +22,57 @@ allfolders <- allfolders[grepl("0$",allfolders)] ### only noise = 0
 human <- useEnsembl(biomart="genes", dataset="hsapiens_gene_ensembl", version=107)
 
 resgene <- do.call(c, lapply(allfolders, function(thisfolder){
-    new_count <- readRDS(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/%s/sim_unbalance_2ct_rep%s.rds", thisfolder, 7))
-
-    # get effective length
-    ensembl_list <- row.names(new_count)
-    gene_coords=getBM(attributes=c("hgnc_symbol","ensembl_transcript_id", "transcript_start","transcript_end"), filters="ensembl_transcript_id", values=ensembl_list, mart=human)
-    gene_coords$size=gene_coords$transcript_end - gene_coords$transcript_start
-    gene_coords <- gene_coords %>% dplyr::select(ensembl_transcript_id, size)
-
-    gene_length <- data.frame(transcript_id = row.names(new_count))
-    gene_length <- left_join(gene_length, gene_coords, by=c("transcript_id"="ensembl_transcript_id")) 
-    gene_length <- gene_length %>% group_by(transcript_id) %>% summarise(size=max(size)) %>% as.data.frame()
-    sum(is.na(gene_length$size))
-
-    # Function to write each column of the count matrix to a Salmon-like quant.sf file
-    write_salmon_quant_files <- function(count_matrix) {
-    for (sample in colnames(count_matrix)) {
-        # Extract counts for the current sample
-        counts <- count_matrix[, sample]
-        
-        # Create a data frame similar to Salmon's quant.sf
-        quant_sf <- tibble(
-        Name = rownames(count_matrix),
-        Length = NA,  # Assuming Length is not available
-        EffectiveLength = gene_length$size,  # Assuming EffectiveLength is not available
-        TPM = (counts / gene_length$size) / sum(counts / gene_length$size) * 1e6,  # Assuming TPM is not calculated here
-        NumReads = counts
-        )
-        dir.create(paste0(outdir, "unbalance", 7))
-        dir.create(paste0(outdir, "unbalance",7,"/",sample))
-        # File path for the output
-        file_path <- paste0(outdir, "unbalance",7,"/", sample, "/quant.sf")
-        
-        # Write the data frame to a file
-        write_tsv(quant_sf, file_path, col_names = TRUE)
-    }
-    }
-
-    # Run the function with your count matrix
-    write_salmon_quant_files(new_count)
-    files <- Sys.glob(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/unbalance%s/*/quant.sf", 7))
-    names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    cnt <- import_counts(files = files, type = "salmon")
-    metadata <- read.csv(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/%s/sim_unbalance_2ct_rep%s_metadata.csv", thisfolder, 7), sep="\t")
-    metadata$group <- paste0("celltype", metadata$group)
-    # get effective length
-    meta <- data.frame("sample_id"=colnames(cnt), "group"=factor(metadata$group, levels=unique(metadata$group)), 
-                    stringsAsFactors = FALSE)
-
     res_g <- lapply(reps, function(r){
         print(r)
+        new_count <- readRDS(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/%s/sim_unbalance_2ct_rep%s.rds", thisfolder, r))
+
+        # get effective length
+        ensembl_list <- row.names(new_count)
+        gene_coords=getBM(attributes=c("hgnc_symbol","ensembl_transcript_id", "transcript_start","transcript_end"), filters="ensembl_transcript_id", values=ensembl_list, mart=human)
+        gene_coords$size=gene_coords$transcript_end - gene_coords$transcript_start
+        gene_coords <- gene_coords %>% dplyr::select(ensembl_transcript_id, size)
+
+        gene_length <- data.frame(transcript_id = row.names(new_count))
+        gene_length <- left_join(gene_length, gene_coords, by=c("transcript_id"="ensembl_transcript_id")) 
+        gene_length <- gene_length %>% group_by(transcript_id) %>% summarise(size=max(size)) %>% as.data.frame()
+        sum(is.na(gene_length$size))
+
+        #Function to write each column of the count matrix to a Salmon-like quant.sf file
+        write_salmon_quant_files <- function(count_matrix) {
+        for (sample in colnames(count_matrix)) {
+            # Extract counts for the current sample
+            counts <- count_matrix[, sample]
+            
+            # Create a data frame similar to Salmon's quant.sf
+            quant_sf <- tibble(
+            Name = rownames(count_matrix),
+            Length = NA,  # Assuming Length is not available
+            EffectiveLength = gene_length$size,  # Assuming EffectiveLength is not available
+            TPM = (counts / gene_length$size) / sum(counts / gene_length$size) * 1e6,  
+            NumReads = counts
+            )
+            dir.create(paste0(outdir, "unbalance", r))
+            dir.create(paste0(outdir, "unbalance",r,"/",sample))
+            # File path for the output
+            file_path <- paste0(outdir, "unbalance",r,"/", sample, "/quant.sf")
+            
+            # Write the data frame to a file
+            write_tsv(quant_sf, file_path, col_names = TRUE)
+        }
+        }
+
+        # Run the function with your count matrix
+        write_salmon_quant_files(new_count)
+        files <- Sys.glob(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/unbalance%s/*/quant.sf", r))
+        names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
+        cnt <- import_counts(files = files, type = "salmon")
+        metadata <- read.csv(sprintf("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/%s/sim_unbalance_2ct_rep%s_metadata.csv", thisfolder, r), sep="\t")
+        metadata$group <- paste0("celltype", metadata$group)
+        # get effective length
+        meta <- data.frame("sample_id"=colnames(cnt), "group"=factor(metadata$group, levels=unique(metadata$group)), 
+                        stringsAsFactors = FALSE)
+
+    
 
         tx2gene <- import_gtf(gtf_file = "/nfs/proj/is_benchmark/singlecells/Homo_sapiens.GRCh38.107.gtf.gz")
         tx2gene <- move_columns_to_front(df = tx2gene, columns = c("transcript_id", "gene_id"))
@@ -90,43 +92,111 @@ resgene <- do.call(c, lapply(allfolders, function(thisfolder){
         # row.names(meta) <- NULL
 
         # Modified code
-        subcnt <- do.call(cbind, lapply(seq(1, 3), function(x) {
-            # Initialize an empty list to store sub-counts for each cell type
-            subcnt_list <- list()
+        # subcnt <- do.call(c, lapply(seq(1, 3), function(x) {
+        #     # Initialize an empty list to store sub-counts for each cell type
+        #     subcnt_list <- list()
             
-            # Loop over each cell type
-            for (ct in 1:7) {
-                # Sample 'r' samples from each cell type
-                samples <- sample(meta[meta$group == sprintf("celltype%d", ct), ]$sample_id, r, replace=T)
+        #     # Loop over each cell type
+        #     for (ct in 1:r) {
+        #         # Sample 'r' samples from each cell type
+        #         group_counts <- table(meta$group)
+        #         # Display the count for each group
+        #         print(group_counts)
+        #         # Get the minimum count among the groups
+        #         min_count <- min(group_counts)
+
+        #         samples <- sample(meta[meta$group == sprintf("celltype%d", ct), ]$sample_id, min_count)
                 
-                # Compute the row sums of counts for the selected samples
-                ct_counts <- rowSums(cnt[, samples])
+        #         # Compute the row sums of counts for the selected samples
+        #         ct_counts <- rowSums(cnt[, samples])
                 
-                # Add the computed counts to the list and name it
-                subcnt_list[[ct]] <- ct_counts
-                names(subcnt_list)[ct] <- sprintf("metacell%d_%s", ct, x)
+        #         # Add the computed counts to the list and name it
+        #         subcnt_list[[ct]] <- ct_counts
+        #         names(subcnt_list)[ct] <- sprintf("metacell%d_%s", ct, x)
+        #     }
+            
+        #     # Combine counts from all cell types for this iteration
+        #     do.call(c, subcnt_list)
+        # }))
+        
+        seurat_obj <- CreateSeuratObject(counts = new_count, min.cells = 0, min.features = 0)
+        metadata <- metadata[order(metadata$sample_id),]
+        seurat_obj <- AddMetaData(seurat_obj, metadata = metadata$group, col.name = "cell_type")
+        
+        subcnt <- do.call(cbind, lapply(1:r, function(ct){
+            subcluster <- subset(seurat_obj, cells = WhichCells(seurat_obj, expression = cell_type %in% c(sprintf('celltype%s', ct))))    
+            subcluster <- NormalizeData(subcluster)
+            subcluster <- ScaleData(subcluster)
+            subcluster <- FindVariableFeatures(subcluster)
+            npcs <- ifelse(min(nrow(subcluster), ncol(subcluster))-1 > 50, 50, min(nrow(subcluster), ncol(subcluster))-1)
+            print(npcs)
+            subcluster <- RunPCA(subcluster, npcs=npcs)
+   
+            pcs <- Embeddings(subcluster, "pca")[, 1:10]
+        
+            set.seed(123)  # For reproducibility
+            kmeans_result <- kmeans(pcs, centers = 3)
+            
+            
+            subcluster$kmeans_clusters <- as.factor(kmeans_result$cluster)  
+            print(table(subcluster$kmeans_clusters))
+
+            cluster_counts_list <- list()
+            if (length(unique(subcluster$kmeans_clusters))<3 | 1 %in% table(subcluster$kmeans_clusters)){
+                #Sample 'r' samples from each cell type
+                group_counts <- table(meta$group)
+                # Display the count for each group
+                print(group_counts)
+                # Get the minimum count among the groups
+                min_count <- min(group_counts)
+                for (i in seq(1,3)){
+                    samples <- sample(meta[meta$group == sprintf("celltype%d", ct), ]$sample_id, min_count)
+                    ct_counts <- rowSums(cnt[, samples])
+                    cluster_counts_list[[as.character(i)]] <- ct_counts
+                }
+        #         # Add the computed counts to the list and name it
+            } else {
+                # Loop through each cluster and aggregate counts
+                for (cluster_id in unique(subcluster$kmeans_clusters)) {
+                    # Get the cells belonging to the current cluster
+                    cluster_cells <- WhichCells(subcluster, expression = kmeans_clusters == cluster_id)
+                    
+                    # Subset the counts matrix to these cells and sum the counts for each gene
+                    cluster_counts <- rowSums(new_count[,cluster_cells])
+                    
+                    # Store the cluster counts in the list
+                    cluster_counts_list[[as.character(cluster_id)]] <- cluster_counts
+                    
+                }
             }
             
-            # Combine counts from all cell types for this iteration
-            do.call(cbind, subcnt_list)
+            
+            
+            names(cluster_counts_list) <- paste0(sprintf("metacell%s_", ct), 1:3)
+            do.call(cbind,cluster_counts_list)
+
         }))
 
+        print("here3")
         pd <- data.frame("sample_id"=colnames(subcnt))
         pd$group <- lapply(pd$sample_id, function(x){strsplit(x, "_")[[1]][1]}) %>% unlist
         pd$rep <- lapply(pd$sample_id, function(x){strsplit(x, "_")[[1]][2]}) %>% unlist
-
+        print("here4")
         allcomb <- apply(combn(unique(pd$group), 2),2,paste0,collapse='_')
+        print("here5")
+        
+        dturtle_g <- do.call(rbind, lapply(allcomb, function(comb){
+            print(comb)
 
-        dturtle_g <- do.call(rbind, lapply(allcomb, function(x){
-            print(x)
-            cell1 <- strsplit(x, "_")[[1]][1]
-            cell2 <- strsplit(x, "_")[[1]][2]            
+            cell1 <- strsplit(comb, "_")[[1]][1]
+            cell2 <- strsplit(comb, "_")[[1]][2]        
+
             dturtle <- run_drimseq(counts = subcnt, tx2gene = tx2gene, pd=pd, id_col = "sample_id",
                                 cond_col = "group", cond_levels = c(cell1, cell2), filtering_strategy = "bulk", 
                                 BPPARAM = biocpar)
             dturtle_1 <- posthoc_and_stager(dturtle = dturtle, ofdr = 1, posthoc = 0)
-            dturtle_g <- data.frame(feature_id=dturtle_1$FDR_table$geneID, fdr=dturtle_1$FDR_table$gene, tool="DTUrtle", nmetacells=r, comb=x) %>% unique
-            dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, fdr=dturtle_1$FDR_table$transcript, tool="DTUrtle", nmetacells=r, comb=x)
+            dturtle_g <- data.frame(feature_id=dturtle_1$FDR_table$geneID, fdr=dturtle_1$FDR_table$gene, tool="DTUrtle", nmetacells=r, comb=comb) %>% unique
+            dturtle_tx <- data.frame(feature_id=dturtle_1$FDR_table$txID, fdr=dturtle_1$FDR_table$transcript, tool="DTUrtle", nmetacells=r, comb=comb)
             dturtle_g
         }))
 
@@ -282,10 +352,10 @@ resgene <- do.call(c, lapply(allfolders, function(thisfolder){
     
         res_g <- do.call("rbind", list(dturtle_g, saturn_g, limma_g, dx_g))
         res_g$folder <- thisfolder
+        unlink(paste0(outdir, "unbalance", r), recursive = TRUE)
 
         return(res_g)
         })
-        unlink(paste0(outdir, "unbalance", 7), recursive = TRUE)
         res_g
     })
     
@@ -384,7 +454,7 @@ supp.labs <- c("Precision", "Recall")
 names(supp.labs) <- c("precision", "recall")
 
 
-png("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/metacell_0_unbalance_prere.png", res=300, width=3000, height=1000)
+png("/nfs/proj/is_benchmark/singlecells/rawdata/simulation_scd/new_metacell_0_unbalance_prere.png", res=300, width=3000, height=1000)
 ggplot(final_long, aes(x=nmetacells, y=mean, color=tool))+
     geom_point()+
     geom_line()+
@@ -392,6 +462,9 @@ ggplot(final_long, aes(x=nmetacells, y=mean, color=tool))+
                  position=position_dodge(0.05))+
     facet_grid(.~measure, labeller=labeller(measure=supp.labs))+
     scale_color_manual(values=c("DTUrtle"='#999999','satuRn'='#E69F00','DEXSeq'='#0077b6','LimmaDS'='#e35d6a'))+
-    theme_bw()+xlab("Number of cells per group") +ylab("Precision/Recall")
+    theme_bw()+xlab("Number of cells per group") +ylab("Precision/Recall")+
+    theme(text = element_text(size = 15),
+        axis.text.x = element_text(size=15, hjust = 1),
+        axis.text.y = element_text(size=15, hjust = 1)) 
 dev.off()
 

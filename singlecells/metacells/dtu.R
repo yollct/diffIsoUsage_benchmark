@@ -85,19 +85,54 @@ resgene <- do.call(c, lapply(allfolders, function(thisfolder){
         # meta$sample_name <- meta$sample_id
         # row.names(meta) <- NULL
 
-        subcnt <- do.call(cbind, lapply(seq(1,3), function(x){
-            samples_group1 <- sample(meta[meta$group=="celltype1",]$sample_id, r)
-            samples_group2 <- sample(meta[meta$group=="celltype2",]$sample_id, r)
-            selected_samples <- c(samples_group1, samples_group2)
+        # subcnt <- do.call(cbind, lapply(seq(1,3), function(x){
+        #     samples_group1 <- sample(meta[meta$group=="celltype1",]$sample_id, r)
+        #     samples_group2 <- sample(meta[meta$group=="celltype2",]$sample_id, r)
+        #     selected_samples <- c(samples_group1, samples_group2)
 
-            submeta <- meta[meta$sample_id %in% selected_samples,]
-            ct1 <- rowSums(cnt[,samples_group1])
-            ct2 <- rowSums(cnt[,samples_group2])
-            subcnt <- cbind(ct1, ct2)
-            colnames(subcnt) <- c(sprintf("metacell1_%s", x), sprintf("metacell2_%s", x))
-            subcnt
-        })
-        )
+        #     submeta <- meta[meta$sample_id %in% selected_samples,]
+        #     ct1 <- rowSums(cnt[,samples_group1])
+        #     ct2 <- rowSums(cnt[,samples_group2])
+        #     subcnt <- cbind(ct1, ct2)
+        #     colnames(subcnt) <- c(sprintf("metacell1_%s", x), sprintf("metacell2_%s", x))
+        #     subcnt
+        # })
+        # )
+        subcnt <- do.call(cbind, lapply(1:2, function(ct){
+            subcluster <- subset(seurat_obj, cells = WhichCells(seurat_obj, expression = cell_type %in% c(sprintf('celltype%s', ct))))    
+            subcluster <- NormalizeData(subcluster)
+            subcluster <- ScaleData(subcluster)
+            subcluster <- FindVariableFeatures(subcluster)
+            npcs <- ifelse(min(nrow(subcluster), ncol(subcluster))-1 > 50, 50, min(nrow(subcluster), ncol(subcluster))-1)
+            print(npcs)
+            subcluster <- RunPCA(subcluster, npcs=npcs)
+            pcs <- Embeddings(subcluster, "pca")[, 1:10]
+            set.seed(123)  # For reproducibility
+            kmeans_result <- kmeans(pcs, centers = 3)
+            subcluster$kmeans_clusters <- as.factor(kmeans_result$cluster)  
+
+            if (unique(subcluster$kmeans_clusters) < 3){
+                
+            }
+
+            cluster_counts_list <- list()
+            # Loop through each cluster and aggregate counts
+            for (cluster_id in ) {
+                # Get the cells belonging to the current cluster
+                cluster_cells <- WhichCells(subcluster, expression = kmeans_clusters == cluster_id)
+
+                # Subset the counts matrix to these cells and sum the counts for each gene
+                cluster_counts <- rowSums(new_count[,cluster_cells])
+                
+                # Store the cluster counts in the list
+                cluster_counts_list[[as.character(cluster_id)]] <- cluster_counts
+                
+            }
+            
+            names(cluster_counts_list) <- paste0(sprintf("metacell%s_", ct), 1:3)
+            do.call(cbind,cluster_counts_list)
+
+        }))
 
         pd <- data.frame("sample_id"=colnames(subcnt))
         pd$group <- lapply(pd$sample_id, function(x){strsplit(x, "_")[[1]][1]}) %>% unlist
@@ -352,6 +387,9 @@ ggplot(final_long, aes(x=nmetacells, y=mean, color=tool))+
                  position=position_dodge(0.05))+
     facet_grid(.~measure, labeller=labeller(measure=supp.labs))+
     scale_color_manual(values=c("DTUrtle"='#999999','satuRn'='#E69F00','DEXSeq'='#0077b6','LimmaDS'='#e35d6a'))+
-    theme_bw()+xlab("Number of cells per group") +ylab("Precision/Recall")
+    theme_bw()+xlab("Number of cells per group") +ylab("Precision/Recall")+
+    theme(text = element_text(size = 15),
+        axis.text.x = element_text(size=15, hjust = 1),
+        axis.text.y = element_text(size=15, hjust = 1)) 
 dev.off()
 

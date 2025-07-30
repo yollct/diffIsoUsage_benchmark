@@ -10,10 +10,10 @@
 #SBATCH --partition=exbio-cpu
 
 
-eval "$(conda shell.bash hook)"
+# eval "$(conda shell.bash hook)"
 
-conda activate r-env
-echo "conda activated"
+# conda activate 
+# echo "conda activated"
 
 # for i in $(seq 1 3);
 # do

@@ -2,6 +2,8 @@ library(NBSplice)
 library(tximport)
 library(tidyr)
 library(dplyr)
+library(rtracklayer)
+library(BiocParallel)
 
 args <- commandArgs(trailingOnly=TRUE)
 outdir <- args[1]
@@ -26,7 +28,7 @@ if (!any(grepl("nbsplice", colnames(resgene)))) {
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE)
+    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
     isoCounts <- txi$counts
     row.names(isoCounts) <- lapply(row.names(isoCounts), function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
     print(genename %>% head)
@@ -44,13 +46,15 @@ if (!any(grepl("nbsplice", colnames(resgene)))) {
     isoCounts <- isoCounts %>% dplyr::select(row.names(designMatrix))
 
     colName <- "condition"
+
     myIsoDataSet<-IsoDataSet(isoCounts, designMatrix, colName, geneIso)
 
     myIsoDataSet<-buildLowExpIdx(myIsoDataSet, colName, ratioThres = 0.01, 
-                            countThres = 1)
-
+                            countThres = 1, BPPARAM=MulticoreParam(workers = 8))
+    print("done build idx")
     myDSResults<-NBTest(myIsoDataSet, colName, test="F")
 
+    print("done test")
     res <- results(myDSResults) 
     nbgene <- res %>% dplyr::select(gene, geneFDR) %>% group_by(gene) %>% summarise(nbsplice=min(geneFDR)) %>% dplyr::rename(feature_id=gene)
     resgene <- full_join(resgene, nbgene, by="feature_id")
@@ -100,14 +104,19 @@ restx <- read.csv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, 
 
 # sresgene <- read.csv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)), sep="\t")
 
-
+gtf <- "/ref/Homo_sapiens.GRCh38.98.gtf"
+tx2gene <- rtracklayer::import(gtf)
+tx2gene <- as.data.frame(tx2gene)
+tx2gene %>% head
+tx2gene$transcript_id_ver <- paste0(tx2gene$transcript_id,".", tx2gene$transcript_version)
+tx2gene <- tx2gene %>% dplyr::select(c("transcript_id_ver", "gene_id"))
 
 if (!any(grepl("nbsplice", colnames(resgene)))) {
     print("kallisto count nbsplice")
     genename  <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
-    files <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
-    names(files) <- gsub(".*/","",gsub("/abundance.h5","",files))
-    txi <- tximport(files, type="kallisto", txOut=TRUE)
+    files <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
+    names(files) <- gsub(".*/","",gsub("/abundance.tsv","",files))
+    txi <- tximport(files, type="kallisto", txOut=TRUE, tx2gene = tx2gene, ignoreAfterBar = TRUE)
     isoCounts <- txi$counts
     row.names(isoCounts) <- lapply(row.names(isoCounts), function(x){strsplit(x,"[.]")[[1]][1]}) %>% unlist
 
@@ -126,7 +135,7 @@ if (!any(grepl("nbsplice", colnames(resgene)))) {
     myIsoDataSet<-IsoDataSet(isoCounts, designMatrix, colName, geneIso)
 
     myIsoDataSet<-buildLowExpIdx(myIsoDataSet, colName, ratioThres = 0.01, 
-                            countThres = 1)
+                            countThres = 1, BPPARAM=MulticoreParam(workers = 8))
 
     myDSResults<-NBTest(myIsoDataSet, colName, test="F")
 
@@ -205,7 +214,7 @@ if (!any(grepl("nbsplice", colnames(resgene)))) {
     myIsoDataSet<-IsoDataSet(isoCounts, designMatrix, colName, geneIso)
 
     myIsoDataSet<-buildLowExpIdx(myIsoDataSet, colName, ratioThres = 0.01, 
-                            countThres = 1)
+                            countThres = 10,  BPPARAM=MulticoreParam(workers = 8))
 
     myDSResults<-NBTest(myIsoDataSet, colName, test="F")
 
@@ -214,7 +223,7 @@ if (!any(grepl("nbsplice", colnames(resgene)))) {
 
     resgene <- full_join(resgene, nbgene, by="feature_id")
 
-    nbtx <- res %>% dplyr::select(iso, FDR) %>% dplyr::rename(feature_id=iso)
+    nbtx <- res %>% dplyr::select(iso, FDR) %>% dplyr::rename(feature_id=iso, nbsplice=FDR)
     restx <- inner_join(restx, nbtx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")

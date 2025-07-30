@@ -20,7 +20,7 @@ seed_simu = strtoi(args[1])
 
 rep <- c(50, 100, 200,500) # how many replicates I want
 
-noise_level <- 0.1
+noise_level <- 0
 
 ## specify data paths ##
 readfilesdir <- "/nfs/proj/is_benchmark/singlecells/rawdata/smarts2_salmon_est_count.h5ad" # directory to rsem output (as input)
@@ -61,11 +61,12 @@ meta <- "/nfs/proj/is_benchmark/singlecells/rawdata/" # meta file (tab-separated
 # ngroup <- unique(Idents(pbmc))
 ngroup <- c(2,3,4,5,6,7)
 
-unlink(paste0(outdir, "/sim_data_unbalance"), recursive = TRUE)
-dir.create(paste0(outdir, "/sim_data_unbalance"))
+simfolder <- "sim_data_unbalance"
+unlink(paste0(outdir, "/", simfolder), recursive = TRUE)
+dir.create(paste0(outdir, "/", simfolder))
 
 lapply(ngroup, function(ng){
-    if (file.exists(paste0(outdir, sprintf("/sim_data_unbalance/sim_unbalance_2ct_rep%s.rds", ng)))){
+    if (file.exists(paste0(outdir, sprintf("/%s/sim_unbalance_2ct_rep%s.rds", simfolder,ng)))){
         return()
     }
     print("running")
@@ -101,7 +102,7 @@ lapply(ngroup, function(ng){
                             rmeans = colMeans(GetAssayData(pbmc[['RNA']], layer="counts")))
     metadata$group <- as.numeric(metadata$group)
     metadata <- metadata %>% filter(group<=ng)
-    metadata <- metadata %>% arrange(group) %>% arrange(desc(rmeans)) %>% group_by(group) %>% group_split() %>% lapply(function(x) x[sample(nrow(x), size=sample(1:nrow(x), 1)),]) %>% bind_rows()
+    metadata <- metadata %>% arrange(group) %>% arrange(desc(rmeans)) %>% group_by(group) %>% group_split() %>% lapply(function(x) x[sample(nrow(x), size=sample(30:nrow(x), 1)),]) %>% bind_rows()
                          # sort rows based on group and sample_id column in ascending order
     unigroup <- unique(metadata$group)
     group1n <- lapply(unigroup, function(x){sum(metadata$group==x)}) %>% unlist ### n replicates (number of cells in each clusters) ()
@@ -165,7 +166,7 @@ lapply(ngroup, function(ng){
     rm(example_marginal)
     rm(example_copula)
     ##### scDEsign3
-    set.seed(123)
+
     example_data <- construct_data(
         sce = sce,
         assay_use = "counts",
@@ -235,7 +236,7 @@ lapply(ngroup, function(ng){
     
 
     #### CHANGES TO DTU ONLY ####
-    set.seed(123)
+
     ## determine isoform switch or differential isoform usage for each gene
     n<-1
     geneinfo <- do.call(rbind, lapply(ntrs %>% dplyr::select(ntr) %>% unlist, function(x){
@@ -509,7 +510,7 @@ lapply(ngroup, function(ng){
     
     
     print("generating new count")
-    set.seed(123)
+ 
     example_newcount <- simu_new(
         sce = sce,
         mean_mat = example_para$mean_mat,
@@ -550,10 +551,10 @@ lapply(ngroup, function(ng){
     # dir.create(simmy_path, recursive = TRUE)
     # dir.create(simnk_path, recursive = TRUE)
 
-    saveRDS(example_newcount, paste0(outdir, sprintf("/sim_data_unbalance/sim_unbalance_2ct_rep%s.rds", as.character(ng))))
-    write.table(isoinfo, paste0(outdir, sprintf("/sim_data_unbalance/sim_unbalance_2ct_rep%s_isoinfo.csv", as.character(ng))), sep="\t", row.names = F)
-    write.table(geneinfo, paste0(outdir, sprintf("/sim_data_unbalance/sim_unbalance_2ct_rep%s_geneinfo.csv", as.character(ng))), sep="\t", row.names = F)
-    write.table(metadata, paste0(outdir, sprintf("/sim_data_unbalance/sim_unbalance_2ct_rep%s_metadata.csv", as.character(ng))), sep="\t", row.names = F)
+    saveRDS(example_newcount, paste0(outdir, sprintf("/%s/sim_unbalance_2ct_rep%s.rds", simfolder,as.character(ng))))
+    write.table(isoinfo, paste0(outdir, sprintf("/%s/sim_unbalance_2ct_rep%s_isoinfo.csv", simfolder, as.character(ng))), sep="\t", row.names = F)
+    write.table(geneinfo, paste0(outdir, sprintf("/%s/sim_unbalance_2ct_rep%s_geneinfo.csv", simfolder,as.character(ng))), sep="\t", row.names = F)
+    write.table(metadata, paste0(outdir, sprintf("/%s/sim_unbalance_2ct_rep%s_metadata.csv", simfolder,as.character(ng))), sep="\t", row.names = F)
 })
 # ### column names : sample name or cell ID 
 # row.names(allsrr) <- srr$transcript_id

@@ -1,0 +1,46 @@
+BootStrap: docker
+From: rocker/r-ver:4.2
+
+%files 
+    junctionseq.R
+    dependencies.R
+
+%post
+    #apt-get update && apt-get --no-install-recommends --fix-broken install -y libc6 libcurl4-openssl-dev libssl-dev libxml2-dev 
+    apt-get update && apt-get --no-install-recommends --fix-broken install -y make curl
+
+# Installing Mamba
+    mkdir /Rlib
+    chmod 777 /Rlib
+
+
+    echo "R_LIBS_USER='/Rlib'" >> /usr/local/lib/R/etc/Renviron
+    echo "R_LIBS='/Rlib'" >> /usr/local/lib/R/etc/Renviron
+    R -e "install.packages(\"BiocManager\", repo=\"https://cloud.r-project.org\")"
+    R -e "install.packages(\"dplyr\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
+    R -e "install.packages(\"tidyr\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
+    R -e "install.packages(\"statmod\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
+    R -e "install.packages(\"matrixStats\", repo=\"https://cloud.r-project.org\", lib=\"/Rlib\")"
+    R -e "BiocManager::install(\"doParallel\",ask=FALSE, force=TRUE, lib=\"/Rlib\")"
+    R -e "BiocManager::install(\"BiocParallel\",ask=FALSE, force=TRUE, lib=\"/Rlib\")"
+    
+    R -e "install.packages(\"plyr\", repo=NULL, type=\"source\", lib=\"/Rlib\")"
+    R -e "install.packages(\"foreach\", repo=NULL, type=\"source\", lib=\"/Rlib\")"
+    R -e "source('http://bioconductor.org/biocLite.R')"
+    R -e "BiocManager::install(\"DESeq2\",ask=FALSE, dependencies=TRUE, force=TRUE, lib=\"/Rlib\")"
+
+%environment
+    export PATH=/opt/root/bin:$PATH
+    export LD_LIBRARY_PATH=/opt/root/lib:$LD_LIBRARY_PATH
+    export PYTHONPATH=/opt/root/lib
+
+%runscript
+
+    for x in $(cat /mnt/compare_list.txt); do
+        con1=$(echo ${x} | cut -d ';' -f 1)
+        con2=$(echo ${x} | cut -d ';' -f 2)
+        cores=$(echo ${x} | cut -d ';' -f 3)
+
+        Rscript /junctionseq.R /mnt $con1 $con2 $cores
+        echo done $con1 $con2
+    done 

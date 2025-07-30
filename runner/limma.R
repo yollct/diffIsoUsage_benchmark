@@ -2,6 +2,7 @@ library(limma)
 library(edgeR)
 suppressMessages(library(tximport))
 suppressMessages(library(tidyverse))
+suppressMessages(library(DTUrtle))
 biocpar <- BiocParallel::MulticoreParam(12)
 
 args <- commandArgs(trailingOnly=TRUE)
@@ -21,11 +22,11 @@ meta1 = read.csv(meta, sep="\t")
 row.names(meta1) <- meta1$sample_id
 meta1$sample_id <- lapply(meta1$sample_id, function(x){gsub(".sra", "",x)}) %>% unlist
 
-if (!any(grepl("LimmaDS", colnames(resgene)))) { 
+if (!any(grepl("LimmaDS", colnames(restx)))) { 
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="salmon", txOut=TRUE)
     salmontpm <- txi$counts
 
     salmoncnt <- data.frame(txi$counts)
@@ -35,7 +36,7 @@ if (!any(grepl("LimmaDS", colnames(resgene)))) {
     dge$genes$GeneID <- genename$gene_id
 
     A <- rowSums(dge$counts)
-    dge <- dge[A>1,, keep.lib.sizes=FALSE]
+    dge <- dge[A>10, keep.lib.sizes=FALSE]
     dge <- calcNormFactors(dge)
 
     design <- model.matrix(~ group, data = meta1)
@@ -51,7 +52,8 @@ if (!any(grepl("LimmaDS", colnames(resgene)))) {
     resgene$feature_id <- as.character(resgene$feature_id)
     resgene <- full_join(resgene, limmares, by="feature_id")
 
-    limmatx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
+    limmatx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "LimmaDS"="FDR")
+    limmatx$feature_id <- lapply(limmatx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- full_join(restx, limmatx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/salmon_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
@@ -72,11 +74,17 @@ rm(srestx)
 resgene <- read_tsv(paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)))
 restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, con2)))
 
-if (!any(grepl("LimmaDS", colnames(resgene)))) {
+if (!any(grepl("LimmaDS", colnames(restx)))) {
     print("Running Limma kallisto counts")
-    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
-    names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
-    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
+    gtf <- "/nfs/data/references/ensembl98_GRCh38/Homo_sapiens.GRCh38.98.gtf"
+    tx2gene <- import_gtf(gtf_file = gtf)
+    tx2gene$transcript_id_ver <- paste0(tx2gene$transcript_id,".", tx2gene$transcript_version)
+    tx2gene <- move_columns_to_front(df = tx2gene, 
+                                    columns = c("transcript_id_ver", "gene_id"))
+                                    
+    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
+    names(rfiles) <- gsub(".*/","",gsub("/abundance.tsv","",rfiles))
+    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, tx2gene = tx2gene, ignoreAfterBar = TRUE)
 
     rgenename <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
 
@@ -87,7 +95,7 @@ if (!any(grepl("LimmaDS", colnames(resgene)))) {
     dge$genes$GeneID <- rgenename$gene_id
 
     A <- rowSums(dge$counts)
-    dge <- dge[A>1,, keep.lib.sizes=FALSE]
+    dge <- dge[A>10,, keep.lib.sizes=FALSE]
     dge <- calcNormFactors(dge)
 
     design <- model.matrix(~ group, data = meta1)
@@ -103,7 +111,8 @@ if (!any(grepl("LimmaDS", colnames(resgene)))) {
     resgene$feature_id <- as.character(resgene$feature_id)
     resgene <- full_join(resgene, limmares, by="feature_id")
 
-    limmatx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
+    limmatx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "LimmaDS"="FDR")
+    limmatx$feature_id <- lapply(limmatx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- full_join(restx, limmatx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/kal_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")
@@ -123,11 +132,11 @@ resgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", c
 restx <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_tx_%s_%s.txt", con1, con2)))
 
 ########## RSEM #########
-if (!any(grepl("LimmaDS", colnames(resgene)))) {
+if (!any(grepl("LimmaDS", colnames(restx)))) {
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
     genename  <- read.csv(files[1], sep="\t")
-    txi <- tximport(files, type="rsem", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="rsem", txOut=TRUE)
 
     cnt <- data.frame(txi$counts)
     rownames(cnt) <- genename$transcript_id
@@ -136,7 +145,7 @@ if (!any(grepl("LimmaDS", colnames(resgene)))) {
     dge$genes$GeneID <- genename$gene_id
 
     A <- rowSums(dge$counts)
-    dge <- dge[A>1,, keep.lib.sizes=FALSE]
+    dge <- dge[A>10,, keep.lib.sizes=FALSE]
     dge <- calcNormFactors(dge)
 
     design <- model.matrix(~ group, data = meta1)
@@ -152,7 +161,9 @@ if (!any(grepl("LimmaDS", colnames(resgene)))) {
     resgene$feature_id <- as.character(resgene$feature_id)
     resgene <- full_join(resgene, limmares, by="feature_id")
 
-    limmatx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "edgeR"="FDR")
+
+    limmatx <- res %>% dplyr::select(genes, FDR) %>% dplyr::filter(FDR < 0.05) %>% dplyr::rename("feature_id"="genes", "LimmaDS"="FDR")
+    limmatx$feature_id <- lapply(limmatx$feature_id, function(x){strsplit(x, "[.]")[[1]][1]}) %>% unlist
     restx <- full_join(restx, limmatx, by="feature_id")
 
     write.table(resgene, paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt", con1, con2)), row.names = FALSE, sep="\t")

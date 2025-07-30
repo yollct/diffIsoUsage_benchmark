@@ -278,7 +278,10 @@ ggplot(final_long, aes(x=reps, y=mean, color=tool))+
                  position=position_dodge(0.05))+
     facet_grid(.~measure, labeller = labeller(measure=supp.labs))+
     scale_color_manual(values=c("DTUrtle"='#999999','satuRn'='#E69F00'))+
-    theme_bw()+xlab("Number of cell types")+ylab("Precision/recall")
+    theme_bw()+xlab("Number of cell types")+ylab("Precision/Recall")+
+    theme(text = element_text(size = 15),
+        axis.text.x = element_text(size=15, hjust = 1),
+        axis.text.y = element_text(size=15, hjust = 1)) 
 dev.off()
 
 mets <- c("DTUrtle", "satuRn")

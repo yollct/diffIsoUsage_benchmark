@@ -4,6 +4,7 @@ suppressMessages(library(DRIMSeq))
 suppressMessages(library(tidyverse))
 suppressMessages(library(stageR))
 suppressMessages(library(rhdf5))
+suppressMessages(library(DTUrtle))
 biocpar <- BiocParallel::MulticoreParam(12)
 
 args <- commandArgs(trailingOnly=TRUE)
@@ -31,7 +32,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     genename  <- read.csv(paste0(outdir, "/results/salmon_count.csv"))
     files <- Sys.glob(paste0(outdir, "/salmon_out/*/quant.sf"))
     names(files) <- gsub(".*/","",gsub("/quant.sf","",files))
-    txi <- tximport(files, type="salmon", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="salmon", txOut=TRUE)
     salmontpm <- txi$counts
 
     salmoncnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$feature_id, txi$counts)
@@ -131,11 +132,18 @@ restx <- read_tsv(paste0(outdir, sprintf("/results/kal_res_tx_%s_%s.txt", con1, 
 # sresgene <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_gene_%s_%s.txt", con1, con2)))
 # srestx <- read_tsv(paste0(outdir, sprintf("/results/stager_kal_res_tx_%s_%s.txt", con1, con2)))
 
+
 if (!any(grepl("dexseq", colnames(resgene)))) {
     print("Running DEXSeq kallisto counts")
-    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.h5"))
-    names(rfiles) <- gsub(".*/","",gsub("/abundance.h5","",rfiles))
-    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, countsFromAbundance="scaledTPM")
+    gtf <- "/nfs/data/references/ensembl98_GRCh38/Homo_sapiens.GRCh38.98.gtf"
+    tx2gene <- import_gtf(gtf_file = gtf)
+    tx2gene$transcript_id_ver <- paste0(tx2gene$transcript_id,".", tx2gene$transcript_version)
+    tx2gene <- move_columns_to_front(df = tx2gene, 
+                                    columns = c("transcript_id_ver", "gene_id"))
+
+    rfiles <- Sys.glob(paste0(outdir, "/kallisto_out/*/abundance.tsv"))
+    names(rfiles) <- gsub(".*/","",gsub("/abundance.tsv","",rfiles))
+    txi <- tximport(rfiles, type="kallisto", txOut=TRUE, tx2gene = tx2gene, ignoreAfterBar = TRUE)
     rsemtpm <- txi$counts
     rgenename <- read.csv(paste0(outdir, "/results/kal_count.csv"), sep="\t")
     rsemtpm <- apply(rsemtpm, 2, function(x){x+1})
@@ -230,7 +238,7 @@ if (!any(grepl("dexseq", colnames(resgene)))) {
     files <- Sys.glob(paste0(outdir, "/rsem_out/*/*.isoforms.results"))
     names(files) <- gsub(".*/","",gsub("/*.isoforms.results","",files))
     genename  <- read.csv(files[1], sep="\t")
-    txi <- tximport(files, type="rsem", txOut=TRUE, countsFromAbundance="scaledTPM")
+    txi <- tximport(files, type="rsem", txOut=TRUE)
     rsemtpm <- txi$counts
 
     rsemcnt <- data.frame(gene_id=genename$gene_id, feature_id=genename$transcript_id, rsemtpm)

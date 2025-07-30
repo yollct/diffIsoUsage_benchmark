@@ -54,6 +54,7 @@ RCS <- estiExonNBstat(RCS)
 RCS <- estiGeneNBstat(RCS)
 # calculate DS NB statistics on the permutation data sets
 permuteMat <- genpermuteMat(RCS, times=perm.times)
+
 RCS <- DSpermute4GSEA(RCS, permuteMat)
 
 # get gene read counts
@@ -62,11 +63,13 @@ geneCounts <- getGeneCount(RCS)
 label <- label(RCS)
 
 library(parallel)
-cl <- makeCluster(detectCores() - 1)
+cl <- makeCluster(20)
 clusterEvalQ(cl, library(nlme))
 clusterEvalQ(cl, library(DESeq2))
-clusterExport(cl, ls())
+clusterExport(cl,"permuteMat")
+clusterExport(cl,"geneCounts")
 
+print("start apply")
 times <- ncol(permuteMat)
 
 nbstat <- parLapply(cl=cl, X=1:times, fun=function(i) {
@@ -120,8 +123,6 @@ rsresgene <- read_tsv(paste0(outdir, sprintf("/results/rsem_res_gene_%s_%s.txt",
 # seqgene %>% head
 
 print("analysed seqGSEA")
-print(dim(seqgene))
-print(seqgene %>% head)
 
 if (!any(grepl("seqGSEA", colnames(resgene)))) { 
     resgene <- full_join(resgene, seqgene, by="feature_id")

@@ -75,3 +75,6 @@ paired_config.sh
 *.csv
 *.jpeg
 *.gff.gz
+
+miniconda3/*
+.vscode-server/*

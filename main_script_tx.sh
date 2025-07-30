@@ -610,7 +610,7 @@ fi
 echo "#########################"
 echo "Running DRIMSeq from R"
 echo "#########################"
-if ! test -s ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! test -s ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt || ! test -s ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+if ! test -s ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! test -s ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt || ! test -s ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt; then
   Rscript ${path}/runner/drimseq.R $outputdir $path $meta ${groupl[@]}
 fi
 
@@ -633,7 +633,7 @@ echo "Finished running iso-KTSP"
 echo "#########################"
 echo "Running DEXSeq from R"
 echo "#########################"
-if ! grep -q "dexseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dexseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dexseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "dexseq" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dexseq" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dexseq" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/dexseq.R $outputdir $path $meta ${groupl[@]}
 fi
@@ -643,7 +643,7 @@ R --version
 echo "#########################"
 echo "Running DTurtle from R"
 echo "#########################"
-if ! grep -q "dturtle" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "dturtle" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "dturtle" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/dtu.R $outputdir $path $meta $gtf ${groupl[@]}
 fi
@@ -651,10 +651,10 @@ fi
 echo "#########################"
 echo "Running iso-KTSP from R"
 echo "#########################"
-if ! grep -q "iso_ktsp" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
-then
-  Rscript ${path}/runner/iso-ktsp.R $outputdir $path ${groupl[@]}
-fi
+# if ! grep -q "iso_ktsp" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "iso_ktsp" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
+# then
+Rscript ${path}/runner/iso-ktsp.R $outputdir $path ${groupl[@]}
+#fi
 
 
 #Rscript cuffdiff.R
@@ -663,7 +663,7 @@ fi
 echo "#########################"
 echo "Running NBSplice from R"
 echo "#########################"
-if ! grep -q "nbsplice" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "nbsplice" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "nbsplice" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
   then
   apptainer run --mount type=bind,src=${outputdir},dst=/mnt \
                 --mount type=bind,src=/nfs/data/references/ensembl98_GRCh38,dst=/ref \
@@ -680,7 +680,7 @@ set -eu
 echo "#########################"
 echo "Running Saturn from R"
 echo "#########################"
-if ! grep -q "saturn" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "saturn" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "saturn" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "saturn" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "saturn" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "saturn" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/saturn.R $outputdir $path $meta ${groupl[@]} 
 fi
@@ -694,16 +694,16 @@ echo "#########################"
 echo "Running DSGseq from R"
 echo "#########################"
 
-if ! grep -q "DSGseq" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "DSGseq" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "DSGseq" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+if ! grep -q "DSGseq" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "DSGseq" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "DSGseq" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; then
   
 
   ######### change here to fit the group name of meta data ###########
   group1=$(awk -v outfile=${outputdir} 'BEGIN{FS=OFS=" "}{ if ($2 == "T") print outfile"/results/dsgseq/"$1".count" }' ${meta} | grep -v "group") 
   group2=$(awk -v outfile=${outputdir} 'BEGIN{FS=OFS=" "}{ if ($2 == "N") print outfile"/results/dsgseq/"$1".count" }' ${meta} | grep -v "group") 
 
-  pushd /nfs/scratch/chit/DSGseq/DSG-0.1.0
-  Rscript DSGNB.R $(echo ${group1[@]} | wc -w) ${group1[@]} $(echo ${group2[@]} | wc -w) ${group2[@]} ${outputdir}/results/DSGseq_results.diff
-  popd 
+  # pushd /nfs/scratch/chit/DSGseq/DSG-0.1.0
+  # Rscript DSGNB.R $(echo ${group1[@]} | wc -w) ${group1[@]} $(echo ${group2[@]} | wc -w) ${group2[@]} ${outputdir}/results/DSGseq_results.diff
+  # popd 
   
   Rscript ${path}/runner/dsgseq.R $outputdir $path ${groupl[@]}
 fi 
@@ -711,7 +711,7 @@ fi
 echo "#########################"
 echo "Running Limma from R"
 echo "#########################"
-if ! grep -q "LimmaDS" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "LimmaDS" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "LimmaDS" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "LimmaDS" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "LimmaDS" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "LimmaDS" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/limma.R $outputdir $path $meta ${groupl[@]} 
 fi
@@ -719,7 +719,7 @@ fi
 echo "#########################"
 echo "Running edgeR from R"
 echo "#########################"
-if ! grep -q "edgeR" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "edgeR" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "edgeR" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
+if ! grep -q "edgeR" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "edgeR" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "edgeR" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
 then
   Rscript ${path}/runner/edgeR.R $outputdir $path $meta ${groupl[@]} 
 fi
@@ -741,17 +741,17 @@ conda deactivate
 conda activate /nfs/scratch/chit/.conda/env/seqgsea
 set -eu
 
-echo "#########################"
-echo "Running seqGSEA from R"
-echo "#########################"
-if ! grep -q "seqGSEA" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; then
-  for file in $(ls ${outputdir}/results/htseq_exon); 
-  do
-    sed 's/"//g' ${outputdir}/results/htseq_exon/${file} > ${outputdir}/results/htseq_exon/temp.txt 
-    #mv ${outputdir}/results/htseq_exon/temp.txt ${outputdir}/results/htseq_exon/${file}
-  done
-  Rscript ${path}/runner/seqGSEA/seqgsea.R $outputdir $path $meta $index ${groupl[@]}
-fi
+# echo "#########################"
+# echo "Running seqGSEA from R"
+# echo "#########################"
+# if ! grep -q "seqGSEA" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "seqGSEA" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+#   for file in $(ls ${outputdir}/results/htseq_exon); 
+#   do
+#     sed 's/"//g' ${outputdir}/results/htseq_exon/${file} > ${outputdir}/results/htseq_exon/temp.txt 
+#     #mv ${outputdir}/results/htseq_exon/temp.txt ${outputdir}/results/htseq_exon/${file}
+#   done
+#   Rscript ${path}/runner/seqGSEA/seqgsea.R $outputdir $path $meta $index ${groupl[@]}
+# fi
 
 set +eu
 conda deactivate
@@ -763,7 +763,7 @@ set -eu
 echo "#########################"
 echo "Running bandits from R"
 echo "#########################"
-if ! grep -q "BANDITS" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+if ! grep -q "BANDITS" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt; then
     
     for i in $samples;
     do  
@@ -794,7 +794,7 @@ conda activate /nfs/scratch/chit/.conda/env/r-env
 set -eu
 
 
-if ! grep -q "BANDITS" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt; then
+if ! grep -q "BANDITS" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt; then
     
     
     for i in $samples;
@@ -849,13 +849,13 @@ conda deactivate
 conda activate /nfs/scratch/chit/.conda/env/r-env
 set -eu
 
-echo "#########################"
-echo "Running Cuffdiff from R"
-echo "#########################"
-if ! grep -q "cuffdiff" ${outputdir}/results/salmon_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/kal_res_gene_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/rsem_res_gene_${groupl[0]}_${groupl[1]}.txt; 
-then
-  Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
-fi
+# echo "#########################"
+# echo "Running Cuffdiff from R"
+# echo "#########################"
+# if ! grep -q "cuffdiff" ${outputdir}/results/salmon_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/kal_res_tx_${groupl[0]}_${groupl[1]}.txt || ! grep -q "cuffdiff" ${outputdir}/results/rsem_res_tx_${groupl[0]}_${groupl[1]}.txt; 
+# then
+#   Rscript ${path}/runner/cuffdiff.R $outputdir $path $meta ${groupl[@]} $gtf
+# fi
 
 # echo "#########################"
 # echo "Running rDiff from R"

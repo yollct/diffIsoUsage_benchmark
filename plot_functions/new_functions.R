@@ -1,6 +1,6 @@
 
 
-colMap <- c(iso_ktsp="#999999", drimseq="#E69F00", dexseq="#56B4E9", dturtle="#783f04", seqGSEA="#F0E442", cuffdiff="#0072B2", junctionseq="#D55E00", saturn="#CC79A7", DSGseq="#9ACD32", nbsplice="#00868B", LimmaDS="#5569da", edgeR="#B536DA")
+colMap <- c(iso_ktsp="#999999", drimseq="#E69F00", dexseq="#56B4E9", dturtle="#783f04", seqGSEA="#F0E442", cuffdiff="#0072B2", junctionseq="#D55E00", saturn="#CC79A7", DSGseq="#9ACD32", nbsplice="#00868B", LimmaDS="#5569da", edgeR="#B536DA", BANDITS="#074717")
 
 list_false_positive <- function(methoddf, truthfile, method){
     met <- methoddf[,method]
@@ -92,22 +92,39 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
             
             p <- length(truthfile[truthfile$status==1,]$feature_id)
             recall <- tp/p
-            fdr, 1- precisions
+
             f1 <- 2*tp/(2*tp+fp+fn)
+            
+            fdr <- fp / (tp + fp) # False Discovery Rate calculation
+            
+            # outout <- data.frame(
+            #   metric_value = c(precision, recall, f1, fdr, tp, pp, length(truthfile[truthfile$status == 1,]$feature_id)),
+            #   metric_type = c("precision", "recall", "f1", "fdr", "true_pos", "detected_pos", "real_pos"),
+            #   tool = rep(method, 7),
+            #   thresholds = rep(x, 7)
+            # )
             #    return(tp/p)})
             xx <- xx+1
-            outout <- data.frame(fdr=c(precisions, recall, fdr, f1, tp, p, pp), type=rep(c("precision", "recall", "fdr", "f1", "truepos", "realpos", "detectedpos"), each=length(precisions)), tool=rep(method, length(precisions)*3), thresholds=rep(x, 3))
+            outout <- data.frame(
+              fdr = c(precisions, recall, f1, fdr, tp, p, pp), 
+              type = c("precision", "recall", "f1", "fdr", "truepos", "realpos", "detectedpos"),
+              tool = rep(method, 7), # Repeats method 7 times to match the 7 metrics
+              thresholds = rep(x, 7) # Repeats threshold x 7 times to match the 7 metrics
+            )
             list(t(outout))
             }
         ))
     } else {
         out <- data.frame(row.names=c("fdr","type","tool","thresholds","splits"))
+        print("here1")
         if (split=='events'){
             splitcat <- c("DTE", "DTU", "IS")
         } else {
+            colnames(truthfile)[colnames(truthfile)=="fc"] <- "fc_group"
             splitcat <- unique(truthfile[split][,1])
+            print(splitcat)
         }
-        print(splitcat)
+
         not_in_truth_at_all <- methoddf$feature_id[!methoddf$feature_id %in% truthfile$feature_id]
         
         for (i in splitcat){
@@ -115,11 +132,9 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
             
             not_this_truth <- truthfile[truthfile[split]!=i,]$feature_id 
             this_truth <- c(splitted_truth$feature_id)
-            print("here2")
-            print(i)
+
             ## filter gene that is not this category
             splitted_method <- methoddf %>% dplyr::filter(feature_id %in% this_truth)
-            print(splitted_method %>% nrow)
             
             thisout <- do.call(cbind, sapply(colnames(splitted_method)[2:ncol(splitted_method)], function(method){
                 namet <- splitted_method[,method]
@@ -128,8 +143,7 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
                 
                 x <- thresholds[method,]$thres
                 namet$value <- lapply(namet$value, function(y){ifelse(x==0.05, ifelse(is.na(y), 1, y), ifelse(is.na(y), 0, y))}) %>% unlist()
-                print(method)
-                print(x)
+
                 boomet <- lapply(namet$value, function(y){ifelse(x==0.05, y<x, y>x)}) %>% unlist
                 #precisions <- sapply(thresholds, function(x){
                 
@@ -139,10 +153,7 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
                 tn <- sum(unique(namet$feature_id[!boomet]) %in% splitted_truth[splitted_truth$status==0,]$feature_id)
 
                 pp <- length(unique(namet$feature_id[boomet]))
-                print(tp)
-                print(fp)
-                print(fn)
-                print(tn)
+     
                 precisions <- tp/pp
                 f1 <- 2*tp/(2*tp+fp+fn)
                 # mcc <- (tn*tp)-(fp*fn)/(sqrt((tn+fn)*(fp+tp)*(tn+fp)*(fn+tp)))
@@ -160,10 +171,14 @@ cal_pre_re <- function(methoddf, truthfile, split=NULL, tx=TRUE){
             
                 
                 recall <- tp/p
-                fdr <- 1-precisions
+
             #})
-                
-                outout <- data.frame(fdr=c(precisions, recall, fdr, f1, tp, p, pp), type=rep(c("precision", "recall", "fdr", "f1", "truepos", "realpos", "detectedpos"), each=length(precisions)), tool=rep(method, length(precisions)*3), thresholds=rep(x,3), splits=rep(i, length(precisions)*3))
+                fdr <- fp / (tp + fp) # False Discovery Rate calculation
+                print(length(precisions))
+                outout <- data.frame(fdr=c(precisions, recall, f1, fdr, tp, p, pp), 
+                                     type=rep(c("precision", "recall", "f1", "fdr","truepos", "realpos", "detectedpos"), 
+                                     each=length(precisions)), tool=rep(method, length(precisions)*7), 
+                                     thresholds=rep(x,7), splits=rep(i, length(precisions)*7))
                 list(t(outout))
             }))
             out <- cbind(out, thisout)
@@ -261,7 +276,7 @@ pivot_output <- function(outputpr, split=NULL){
     } else if (split=="gene_group") {
         wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "1")
         wideoutputpr$tool <- factor(wideoutputpr$tool)
-        wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("2-4","5-9", ">9")) 
+        wideoutputpr$splits <- factor(wideoutputpr$splits, level=c("2-4","5-8", ">9")) 
         wideoutputpr$recall[is.nan(wideoutputpr$recall)] = 0
     } else if (split=="fc_group") {
         wideoutputpr <- wideoutputpr %>% dplyr::filter(splits != "1")

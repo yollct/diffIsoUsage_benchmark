@@ -2,12 +2,12 @@
 
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=2
-#SBATCH --output=/nfs/scratch/chit/pairedcuff0.out
-#SBATCH --error=/nfs/scratch/chit/pairedcuff0.err
-#SBATCH --job-name=cuff0
+#SBATCH --output=/nfs/scratch/chit/singlecuff85.out
+#SBATCH --error=/nfs/scratch/chit/singlecuff85.err
+#SBATCH --job-name=cuff85
 #SBATCH --mem-per-cpu=30G
-#SBATCH --time=4-00:00:00
-#SBATCH --partition=exbio-cpu
+##SBATCH --time=4-00:00:00
+#SBATCH --partition=exbio-long-jobs
 
 #path="/nfs/home/students/chit/is_benchmark"
 
@@ -19,10 +19,10 @@
 # done;
 
 
-seq="pair"
-nsam="4"
-bg="0"
-reps="r1 r2 r3 r4 r5"
+seq="single"
+nsam="8"
+bg="0.7"
+reps="r3"
 
 # for seq in $seqtype; do
 #     for nsam in $nsample; do
